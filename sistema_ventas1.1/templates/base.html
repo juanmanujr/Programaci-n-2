@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Ventas{% endblock %}</title>
+    
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <a class="navbar-brand" href="{% url 'dashboard' %}"><i class="fas fa-cash-register"></i> SISVENTAS</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mr-auto">
+            
+          <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <a class="nav-link" href="{% url 'dashboard' %}"><i class="fas fa-chart-line"></i> Dashboard</a>
+          </li>
+          
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMaestros" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <i class="fas fa-database"></i> Maestros
+            </a>
+            <div class="dropdown-menu" aria-labelledby="navbarDropdownMaestros">
+                <h6 class="dropdown-header">GESTIÓN DE CRUD</h6>
+                <a class="dropdown-item" href="{% url 'cliente_lista' %}"><i class="fas fa-users"></i> Clientes</a>
+                <a class="dropdown-item" href="{% url 'proveedor_lista' %}"><i class="fas fa-truck"></i> Proveedores</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="{% url 'producto_lista' %}"><i class="fas fa-box-open"></i> Productos</a> 
+                <a class="dropdown-item" href="#"><i class="fas fa-tags"></i> Categorías y Marcas (Próx)</a>
+            </div>
+          </li>
+          
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownTransacciones" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <i class="fas fa-exchange-alt"></i> Transacciones
+            </a>
+            <div class="dropdown-menu" aria-labelledby="navbarDropdownTransacciones">
+                
+                <h6 class="dropdown-header">GESTIÓN DE VENTAS</h6>
+                <a class="dropdown-item" href="{% url 'venta_crear' %}"><i class="fas fa-cash-register"></i> Nueva Venta</a>
+                <a class="dropdown-item" href="{% url 'venta_lista' %}"><i class="fas fa-clipboard-list"></i> Listado de Ventas</a>
+                <a class="dropdown-item" href="#"><i class="fas fa-hand-holding-usd"></i> Pedidos de Clientes (Próx)</a>
+                
+                <div class="dropdown-divider"></div>
+
+                <h6 class="dropdown-header">GESTIÓN DE COMPRAS</h6>
+                <a class="dropdown-item" href="{% url 'compra_crear' %}"><i class="fas fa-truck-loading"></i> Nueva Compra</a>
+                <a class="dropdown-item" href="{% url 'compra_lista' %}"><i class="fas fa-dolly-flatbed"></i> Listado de Compras</a>
+                <a class="dropdown-item" href="#"><i class="fas fa-file-invoice-dollar"></i> Órdenes de Compra (Próx)</a>
+                
+                <div class="dropdown-divider"></div>
+                
+                <h6 class="dropdown-header">INVENTARIO</h6>
+                <a class="dropdown-item" href="#"><i class="fas fa-warehouse"></i> Ajustes de Inventario (Próx)</a>
+                <a class="dropdown-item" href="#"><i class="fas fa-undo"></i> Devoluciones (Próx)</a>
+                
+            </div>
+          </li>
+          
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownFinanzas" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <i class="fas fa-calculator"></i> Finanzas
+            </a>
+            <div class="dropdown-menu" aria-labelledby="navbarDropdownFinanzas">
+                <h6 class="dropdown-header">CUENTAS Y CAJA</h6>
+                <a class="dropdown-item" href="#">Gestión de Cajas (Próx)</a>
+                <a class="dropdown-item" href="#">Cuentas por Cobrar (Próx)</a>
+                <a class="dropdown-item" href="#">Órdenes de Pago (Próx)</a>
+            </div>
+          </li>
+          
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'cliente_crear' %}"><i class="fas fa-user-plus"></i> Añadir Cliente</a>
+          </li>
+          
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'admin:index' %}"><i class="fas fa-cogs"></i> Administrador</a>
+          </li>
+        </ul>
+        
+        <ul class="navbar-nav ml-auto">
+            {% if user.is_authenticated %}
+            <li class="nav-item">
+                <a class="nav-link" href="#">Hola, {{ user.username }}</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#"><i class="fas fa-sign-out-alt"></i> Salir</a> 
+            </li>
+            {% else %}
+            <li class="nav-item">
+                <a class="nav-link" href="#"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a> 
+            </li>
+            {% endif %}
+        </ul>
+      </div>
+    </nav>
+
+    <main role="main" class="container">
+        
+        <div class="mt-3">
+            {% if messages %}
+              {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                  {{ message }}
+                  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+              {% endfor %}
+            {% endif %}
+        </div>
+        
+        {% block content %}
+        {% endblock %}
+    </main>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
