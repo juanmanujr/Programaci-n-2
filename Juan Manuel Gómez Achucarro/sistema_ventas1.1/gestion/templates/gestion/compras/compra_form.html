@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        
+        <h2 class="mt-4 mb-4">{{ titulo_pagina }}</h2>
+        <p class="alert alert-info"><i class="fas fa-info-circle"></i> Esta vista solo registra la cabecera de la compra. El **detalle de productos se añadirá en la siguiente pantalla**.</p>
+
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-truck-loading"></i> Datos de la Compra
+            </div>
+            
+            <div class="card-body">
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {{ form.as_p }}
+
+                    <div class="d-flex justify-content-end mt-4">
+                        <button type="submit" class="btn btn-success mr-2">
+                            <i class="fas fa-check-circle"></i> Continuar y Crear
+                        </button>
+                        <a href="{% url 'compra_lista' %}" class="btn btn-secondary">
+                            <i class="fas fa-times-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}

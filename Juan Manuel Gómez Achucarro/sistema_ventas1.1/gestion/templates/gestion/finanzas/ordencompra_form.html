@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}
+        Editar Orden de Compra #{{ object.id }}
+    {% else %}
+        Crear Nueva Orden de Compra
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="mt-4">
+    <h2>
+        {% if object %}
+            Editar Orden de Compra #{{ object.id }}
+        {% else %}
+            Crear Nueva Orden de Compra
+        {% endif %}
+    </h2>
+
+    <form method="post" id="orden_compra_form">
+        {% csrf_token %}
+        {{ form.empleado }}
+        {{ form.total }}
+
+        <div class="card shadow mb-4">
+            <div class="card-header bg-info text-white">
+                Información General
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="{{ form.proveedor.id_for_label }}">{{ form.proveedor.label }}{% if form.proveedor.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                            {{ form.proveedor }}
+                            {% if form.proveedor.help_text %}
+                                <small class="form-text text-muted">{{ form.proveedor.help_text }}</small>
+                            {% endif %}
+                            {% for error in form.proveedor.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="{{ form.fecha_entrega_estimada.id_for_label }}">{{ form.fecha_entrega_estimada.label }}{% if form.fecha_entrega_estimada.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                            {{ form.fecha_entrega_estimada }}
+                            {% if form.fecha_entrega_estimada.help_text %}
+                                <small class="form-text text-muted">{{ form.fecha_entrega_estimada.help_text }}</small>
+                            {% endif %}
+                            {% for error in form.fecha_entrega_estimada.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="{{ form.moneda.id_for_label }}">{{ form.moneda.label }}{% if form.moneda.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                            {{ form.moneda }}
+                            {% if form.moneda.help_text %}
+                                <small class="form-text text-muted">{{ form.moneda.help_text }}</small>
+                            {% endif %}
+                            {% for error in form.moneda.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="{{ form.estado.id_for_label }}">{{ form.estado.label }}{% if form.estado.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                            {{ form.estado }}
+                            {% if form.estado.help_text %}
+                                <small class="form-text text-muted">{{ form.estado.help_text }}</small>
+                            {% endif %}
+                            {% for error in form.estado.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="form-group mb-3">
+                            <label for="{{ form.observaciones.id_for_label }}">{{ form.observaciones.label }}{% if form.observaciones.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                            {{ form.observaciones }}
+                            {% if form.observaciones.help_text %}
+                                <small class="form-text text-muted">{{ form.observaciones.help_text }}</small>
+                            {% endif %}
+                            {% for error in form.observaciones.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                Productos Solicitados
+                <button type="button" class="btn btn-sm btn-light" id="add-item">
+                    <i class="fas fa-plus"></i> Agregar Producto
+                </button>
+            </div>
+            <div class="card-body">
+                {{ formset.management_form }}
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="detalle-table">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="width: 40%;">Producto</th>
+                                <th style="width: 20%;">Cantidad</th>
+                                <th style="width: 20%;">Precio Unitario</th>
+                                <th style="width: 15%;">Subtotal</th>
+                                <th style="width: 5%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for form_detalle in formset %}
+                                <tr id="{{ form_detalle.prefix }}" class="{% if form_detalle.instance.pk %}detalle-existente{% else %}detalle-nuevo{% endif %}">
+                                    {{ form_detalle.id }}
+                                    {{ form_detalle.DELETE }}
+                                    
+                                    <td>
+                                        <div class="form-group mb-3">
+                                            <label for="{{ form_detalle.producto.id_for_label }}" class="sr-only">{{ form_detalle.producto.label }}</label>
+                                            {{ form_detalle.producto }}
+                                            {% for error in form_detalle.producto.errors %}
+                                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group mb-3">
+                                            <label for="{{ form_detalle.cantidad.id_for_label }}" class="sr-only">{{ form_detalle.cantidad.label }}</label>
+                                            {{ form_detalle.cantidad }}
+                                            {% for error in form_detalle.cantidad.errors %}
+                                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group mb-3">
+                                            <label for="{{ form_detalle.precio_unitario.id_for_label }}" class="sr-only">{{ form_detalle.precio_unitario.label }}</label>
+                                            {{ form_detalle.precio_unitario }}
+                                            {% for error in form_detalle.precio_unitario.errors %}
+                                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td class="text-right">
+                                        <span class="row-subtotal">
+                                            {% if form_detalle.instance.pk %}
+                                                ${{ form_detalle.instance.subtotal|floatformat:2 }}
+                                            {% else %}
+                                                $ 0.00
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if not form_detalle.empty_form %}
+                                            <button type="button" class="btn btn-sm btn-danger delete-row" title="Eliminar"><i class="fas fa-trash"></i></button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-right"><strong>TOTAL:</strong></td>
+                                <td class="text-right">
+                                    <strong id="total_oc">$ 0.00</strong>
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Orden de Compra</button>
+        <a href="{% url 'ordencompra_lista' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancelar</a>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script type="text/template" id="empty-form-template">
+    <tr id="{{ formset.empty.prefix }}" class="detalle-nuevo">
+        {{ formset.empty.id }}
+        {{ formset.empty.DELETE }}
+        
+        <td>
+            <div class="form-group mb-3">
+                <label for="{{ formset.empty.producto.id_for_label }}" class="sr-only">{{ formset.empty.producto.label }}</label>
+                {{ formset.empty.producto }}
+                {% for error in formset.empty.producto.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+            </div>
+        </td>
+        <td>
+            <div class="form-group mb-3">
+                <label for="{{ formset.empty.cantidad.id_for_label }}" class="sr-only">{{ formset.empty.cantidad.label }}</label>
+                {{ formset.empty.cantidad }}
+                {% for error in formset.empty.cantidad.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+            </div>
+        </td>
+        <td>
+            <div class="form-group mb-3">
+                <label for="{{ formset.empty.precio_unitario.id_for_label }}" class="sr-only">{{ formset.empty.precio_unitario.label }}</label>
+                {{ formset.empty.precio_unitario }}
+                {% for error in formset.empty.precio_unitario.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+            </div>
+        </td>
+        <td class="text-right">
+            <span class="row-subtotal">$ 0.00</span>
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-danger delete-row" title="Eliminar"><i class="fas fa-trash"></i></button>
+        </td>
+    </tr>
+    </script>
+
+<script>
+    $(document).ready(function() {
+        const $detalleTableBody = $('#detalle-table tbody');
+        const $managementForm = $('#id_{{ formset.prefix }}-TOTAL_FORMS');
+        let formCount = parseInt($managementForm.val());
+
+        function updateSubtotal($row) {
+            const cantidad = parseFloat($row.find('.row-cantidad').val() || 0);
+            const precio = parseFloat($row.find('.row-precio').val() || 0);
+            const subtotal = cantidad * precio;
+            
+            $row.find('.row-subtotal').text('$' + subtotal.toFixed(2));
+            return subtotal;
+        }
+
+        function updateTotal() {
+            let total = 0;
+            $detalleTableBody.find('tr').each(function() {
+                // Solo sumar si la fila no está marcada para eliminación (oculta)
+                if (!$(this).find('input[id$="-DELETE"]').val() == 'on') {
+                    total += updateSubtotal($(this));
+                }
+            });
+            $('#total_oc').text('$' + total.toFixed(2));
+            // Actualizar el campo oculto del formulario principal
+            $('#id_total').val(total.toFixed(2));
+        }
+
+        // 1. Clonar y Añadir fila
+        $('#add-item').on('click', function() {
+            const template = $('#empty-form-template').html().replace(/__prefix__/g, formCount);
+            const $newRow = $(template);
+            
+            // Reemplaza el prefijo temporal de la plantilla por el índice real
+            $newRow.html($newRow.html().replace(/{{ formset.empty.prefix }}/g, `{{ formset.prefix }}-${formCount}`));
+            
+            $detalleTableBody.append($newRow);
+            
+            // Si usas select2, descomenta la siguiente línea:
+            // $newRow.find('.select2').select2(); 
+
+            formCount++;
+            $managementForm.val(formCount);
+            updateTotal();
+        });
+
+        // 2. Eliminar fila
+        $detalleTableBody.on('click', '.delete-row', function() {
+            const $row = $(this).closest('tr');
+            const $deleteInput = $row.find('input[id$="-DELETE"]');
+
+            if ($deleteInput.length) {
+                // Fila existente o nueva con campo DELETE: Marcar para eliminación (ocultar)
+                $deleteInput.val('on');
+                $row.hide();
+            } else {
+                // Fila completamente nueva, sin ID ni campo DELETE: Eliminar del DOM
+                $row.remove();
+            }
+            updateTotal();
+        });
+
+        // 3. Eventos de cálculo: Recalcular al cambiar cantidad o precio
+        $detalleTableBody.on('input change', '.row-cantidad, .row-precio', function() {
+            updateTotal();
+        });
+
+        // 4. Inicialización: Calcular el total inicial y ocultar filas marcadas para borrado
+        updateTotal();
+
+        // Ocultar filas que ya vienen marcadas para eliminación (en caso de error POST)
+        $detalleTableBody.find('input[id$="-DELETE"][value="on"]').each(function() {
+            $(this).closest('tr').hide();
+        });
+    });
+</script>
+{% endblock %}

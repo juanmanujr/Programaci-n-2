@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load humanize %}
+
+{% block title %}
+    {% if object %}Editar Orden de Pago OP-{{ object.id }}{% else %}Crear Nueva Orden de Pago{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<h2 class="display-4">💰 
+    {% if object %}Editar Orden de Pago OP-{{ object.id }}{% else %}Nueva Orden de Pago{% endif %}
+</h2>
+<p class="text-muted">Gestione los pagos a proveedores aplicando montos a las Cuentas por Pagar pendientes.</p>
+
+<hr>
+
+<form method="post" id="ordenPagoForm">
+    {% csrf_token %}
+
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-file-invoice"></i> Datos Generales de la Orden</h5>
+                </div>
+                <div class="card-body">
+                    {# Campos del OrdenDePagoForm #}
+                    {{ form|crispy }}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-calculator"></i> Resumen y Control</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">El total aplicado representa el monto total que saldrá de caja/banco para cubrir las deudas seleccionadas.</p>
+                    
+                    {# Campo de Total Aplicado (Solo Lectura) #}
+                    <div class="form-group">
+                        <label for="id_total_aplicado">Total Aplicado</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                {# Muestra el símbolo de la moneda principal (ej: Gs, $). Debe ser cargado vía Contexto si es variable. #}
+                                <span class="input-group-text currency-symbol">{{ object.moneda.simbolo|default:'$' }}</span> 
+                            </div>
+                            <input type="text" id="id_total_aplicado" class="form-control form-control-lg bg-light font-weight-bold text-right" value="0" readonly>
+                        </div>
+                    </div>
+                    
+                    {% if object and object.estado != 'PENDIENTE' %}
+                    <div class="alert alert-danger mt-3">
+                        ⚠️ **Advertencia:** Esta orden ya está **{{ object.estado }}**. La edición puede afectar la contabilidad.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="fas fa-list-alt"></i> Detalle de Cuentas por Pagar (CxP)</h5>
+        </div>
+        <div class="card-body">
+            
+            {{ formset.management_form }}
+            
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="detalle-formset">
+                    <thead>
+                        <tr class="table-active">
+                            <th>Cuenta por Pagar</th>
+                            <th>Monto Pendiente (Referencia)</th>
+                            <th>Monto a Aplicar</th>
+                            <th class="text-center">Eliminar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for form in formset %}
+                        <tr class="formset-row {% if forloop.last and not object %}empty-form{% endif %}">
+                            
+                            {# 1. ID de la Cuenta por Pagar #}
+                            <td>
+                                {{ form.cuenta_a_pagar.errors }}
+                                {{ form.cuenta_a_pagar|attr:"class:form-control cuenta-a-pagar-select" }}
+                            </td>
+                            
+                            {# 2. Campo de REFERENCIA (Solo lectura, para mostrar el pendiente) #}
+                            <td class="monto-pendiente-cell">
+                                <input type="text" class="form-control text-right monto-pendiente-referencia" value="" readonly>
+                            </td>
+
+                            {# 3. Monto a Aplicar #}
+                            <td>
+                                {{ form.monto_aplicado.errors }}
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text currency-symbol">{{ object.moneda.simbolo|default:'$' }}</span>
+                                    </div>
+                                    {{ form.monto_aplicado|attr:"class:form-control text-right monto-aplicado-input" }}
+                                </div>
+                            </td>
+
+                            {# 4. Campo de control de borrado #}
+                            <td class="text-center align-middle">
+                                {{ form.id }}
+                                {{ form.DELETE }}
+                                <label for="{{ form.DELETE.id_for_label }}" class="d-block text-danger mt-1 small">Borrar</label>
+                                {{ form.non_field_errors }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <button type="button" class="btn btn-primary mt-3" id="add-item"><i class="fas fa-plus"></i> Agregar Línea de Pago</button>
+
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between my-4">
+        <a href="{% url 'ordenpago_list' %}" class="btn btn-secondary btn-lg">Cancelar</a>
+        <button type="submit" class="btn btn-success btn-lg">
+            <i class="fas fa-save"></i> 
+            {% if object %}Guardar Cambios{% else %}Crear Orden de Pago{% endif %}
+        </button>
+    </div>
+
+</form>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    
+    // Almacenamiento local del template de la fila vacía de Django
+    // Se usa la última fila generada por el formset, que es la "fila vacía"
+    let empty_row_template = $('#detalle-formset tbody tr.empty-form').clone(true); 
+    $('#detalle-formset tbody tr.empty-form').remove(); // Quitar la fila vacía visible inicialmente
+    
+    // -----------------------------------------------------------------
+    // 1. FORMSET DINÁMICO (Añadir/Eliminar filas)
+    // -----------------------------------------------------------------
+    
+    // Función para reindexar los elementos (IMPORTANTE para el management form)
+    function reindex_forms() {
+        let forms = $('#detalle-formset tbody tr.formset-row:visible');
+        
+        forms.each(function(i) {
+            $(this).find(':input').each(function() {
+                let name = $(this).attr('name');
+                if (name) {
+                    name = name.replace(/-\d+-/g, '-' + i + '-');
+                    $(this).attr('name', name);
+                }
+                let id = $(this).attr('id');
+                if (id) {
+                    id = id.replace(/-\d+-/g, '-' + i + '-');
+                    $(this).attr('id', id);
+                }
+            });
+            // Asegurar que el checkbox DELETE esté desmarcado para formas visibles
+            $(this).find('input[name$="DELETE"]').prop('checked', false);
+        });
+        
+        // Actualizar TOTAL_FORMS al número de filas visibles/activas
+        $('#id_ordenpago_detalle_set-TOTAL_FORMS').val(forms.length);
+    }
+
+    // Evento para añadir una nueva línea
+    $('#add-item').click(function() {
+        let current_forms = parseInt($('#id_ordenpago_detalle_set-TOTAL_FORMS').val());
+        
+        // Clonar, reindexar y limpiar
+        let new_row = empty_row_template.clone(true);
+        new_row.removeClass('empty-form').show(); 
+        
+        // Renombrar los campos al nuevo índice
+        new_row.find(':input').each(function() {
+            let name = $(this).attr('name');
+            let id = $(this).attr('id');
+            if (name) {
+                name = name.replace(/-\d+-/g, '-' + current_forms + '-');
+                $(this).attr('name', name);
+            }
+            if (id) {
+                id = id.replace(/-\d+-/g, '-' + current_forms + '-');
+                $(this).attr('id', id);
+            }
+            // Limpiar valores
+            if ($(this).attr('type') !== 'checkbox') {
+                $(this).val('');
+            } else {
+                $(this).prop('checked', false);
+            }
+        });
+        
+        // Adjuntar y actualizar el total de forms
+        $('#detalle-formset tbody').append(new_row);
+        $('#id_ordenpago_detalle_set-TOTAL_FORMS').val(current_forms + 1);
+        
+        // Volver a adjuntar eventos a los nuevos campos clonados (solo si clone(true) no funciona en tu entorno)
+        new_row.find('.monto-aplicado-input').on('change keyup', updateTotal);
+        new_row.find('.cuenta-a-pagar-select').on('change', updateMontoPendiente);
+        
+        updateTotal(); 
+    });
+
+    // Evento para eliminar/restaurar una línea
+    $('#detalle-formset').on('change', 'input[name$="DELETE"]', function() {
+        let row = $(this).closest('.formset-row');
+        if ($(this).is(':checked')) {
+            row.hide();
+        } else {
+            row.show();
+        }
+        updateTotal();
+        // reindex_forms(); // La reindexación solo es vital antes de SUBMIT o al eliminar/añadir formas en blanco. Aquí solo actualizamos el total.
+    });
+    
+    // -----------------------------------------------------------------
+    // 2. LÓGICA DE CÁLCULO Y REFERENCIA (SIMULADA, REQUIERE AJAX REAL)
+    // -----------------------------------------------------------------
+    
+    let cuentasPendientes = {}; 
+    
+    // ** FUNCIÓN PARA OBTENER DATOS REALES VÍA AJAX **
+    function obtenerMontosPendientes() {
+        // En tu vista de Django, debes pasar las cuentas pendientes del proveedor seleccionado.
+        // Aquí se simula la data para que el JS funcione: ID_CXP : MONTO_PENDIENTE
+        
+        cuentasPendientes = {
+            '1': 500000.00, 
+            '2': 750000.00, 
+            '3': 1200000.00,
+            '4': 250000.00,
+            // Agrega más IDs de CxP y sus montos pendientes aquí si es necesario
+        };
+        
+        // Inicializar los campos de referencia para las filas existentes
+        $('.cuenta-a-pagar-select').each(function() {
+             updateMontoPendiente.call(this);
+        });
+    }
+
+    // Actualiza el campo de referencia del Monto Pendiente
+    function updateMontoPendiente() {
+        let row = $(this).closest('.formset-row');
+        let selectedId = $(this).val();
+        
+        // Obtener el monto (si existe) o usar 0
+        let monto = cuentasPendientes[selectedId] || 0;
+        
+        // Formatear el número (Ejemplo: 1.200.000)
+        let formattedMonto = monto.toLocaleString('es-ES', { 
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
+
+        row.find('.monto-pendiente-referencia').val(formattedMonto);
+    }
+    
+    // Función de cálculo del total aplicado
+    function updateTotal() {
+        let total = 0;
+        $('.formset-row').each(function() {
+            let row = $(this);
+            let montoAplicadoInput = row.find('.monto-aplicado-input');
+            let deleteCheckbox = row.find('input[name$="DELETE"]');
+
+            // Ignorar filas marcadas para eliminación o filas ocultas
+            if (deleteCheckbox.length && deleteCheckbox.is(':checked')) {
+                return true; 
+            }
+            
+            let montoStr = montoAplicadoInput.val() || '0';
+            
+            // Reemplazamos separadores de miles (punto) y comas decimales para parsear correctamente en JS
+            let monto = parseFloat(montoStr.replace(/\./g, '').replace(/,/g, '.')) || 0;
+            
+            total += monto;
+        });
+
+        // Formatear el total (ej: 1.500.000)
+        let formattedTotal = total.toLocaleString('es-ES', { 
+            minimumFractionDigits: 0, 
+            maximumFractionDigits: 0 
+        });
+        
+        $('#id_total_aplicado').val(formattedTotal);
+    }
+
+    // -----------------------------------------------------------------
+    // 3. INICIALIZACIÓN
+    // -----------------------------------------------------------------
+
+    // Inicializar eventos en campos existentes
+    $('.monto-aplicado-input').on('change keyup', updateTotal);
+    $('.cuenta-a-pagar-select').on('change', updateMontoPendiente);
+    
+    // Cargar y mostrar montos pendientes y calcular el total inicial
+    obtenerMontosPendientes();
+    updateTotal();
+    
+    // ** Evento para asegurar la reindexación antes de enviar **
+    $('#ordenPagoForm').on('submit', function() {
+        // Antes de enviar, reindexamos para que el management form sea correcto
+        reindex_forms(); 
+    });
+});
+</script>
+
+{% endblock %}

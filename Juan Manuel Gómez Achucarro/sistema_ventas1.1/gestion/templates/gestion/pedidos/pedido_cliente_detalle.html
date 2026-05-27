@@ -1,0 +1,336 @@
+{% extends "base.html" %} 
+{% load humanize %}
+{% load static %} {# ¡Añadido para que la referencia a jQuery.formset funcione! #}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    
+    {# Mensajes de Django #}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="fas {% if 'success' in message.tags %}fa-check-circle{% else %}fa-exclamation-triangle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white">
+            <h4 class="mb-0">
+                <i class="fas fa-file-invoice"></i> {{ titulo_pagina }} 
+                <small class="text-muted">(ID: {{ pedido.pk }})</small>
+            </h4>
+        </div>
+        <div class="card-body">
+            
+            {# ================= CABECERA DEL PEDIDO ================= #}
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h5>Cliente: <strong>{{ pedido.cliente }}</strong></h5>
+                    <p class="mb-1"><strong>Empleado:</strong> {{ pedido.empleado }}</p>
+                    <p class="mb-1"><strong>Fecha Pedido:</strong> {{ pedido.fecha_pedido|date:"d/m/Y H:i" }}</p>
+                    <p class="mb-1"><strong>Entrega Estimada:</strong> {{ pedido.fecha_entrega_estimada|default:"N/A"|date:"d/m/Y" }}</p>
+                    <p class="mb-1">
+                        <strong>Total Estimado:</strong> 
+                        <span class="badge bg-primary text-white fs-5">${{ pedido.total|floatformat:2|intcomma }}</span>
+                    </p>
+                    <p class="mb-1">
+                        <strong>Estado:</strong> 
+                        <span class="badge 
+                            {% if pedido.estado == 'Pendiente' %}bg-warning text-dark
+                            {% elif pedido.estado == 'Completado' %}bg-success
+                            {% elif pedido.estado == 'Cancelado' %}bg-danger
+                            {% else %}bg-secondary{% endif %}">
+                            {{ pedido.estado }}
+                        </span>
+                    </p>
+                </div>
+                
+                {# ================= BOTONES DE ACCIÓN ================= #}
+                <div class="col-md-4 text-end">
+                    
+                    {# Botón Editar Cabecera (Siempre visible) #}
+                    <a href="{% url 'pedido_cliente_editar_cabecera' pk=pedido.pk %}" class="btn btn-sm btn-warning mb-2">
+                        <i class="fas fa-pencil-alt"></i> Editar Cabecera
+                    </a>
+                    
+                    {% if pedido.estado == 'Pendiente' %}
+                        {# Formulario para COMPLETAR #}
+                        <form method="post" action="{% url 'pedido_cliente_detalle' pk=pedido.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="completar">
+                            <button type="submit" class="btn btn-sm btn-success mb-2" onclick="return confirm('¿Está seguro de marcar este pedido como COMPLETADO?')">
+                                <i class="fas fa-check-circle"></i> Completar Pedido
+                            </button>
+                        </form>
+                        {# Formulario para CANCELAR #}
+                        <form method="post" action="{% url 'pedido_cliente_detalle' pk=pedido.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="cancelar">
+                            <button type="submit" class="btn btn-sm btn-danger mb-2" onclick="return confirm('¿Está seguro de CANCELAR este pedido?')">
+                                <i class="fas fa-times-circle"></i> Cancelar Pedido
+                            </button>
+                        </form>
+                    {% endif %}
+                    
+                    <a href="{% url 'pedido_cliente_lista' %}" class="btn btn-sm btn-secondary mb-2">
+                        <i class="fas fa-list"></i> Volver al Listado
+                    </a>
+                </div>
+            </div>
+            
+            <hr>
+
+            {# ================= DETALLES (Formset) ================= #}
+            {% if puede_modificar %}
+            <form method="post" id="detalle-form">
+                {% csrf_token %}
+                {{ formset.management_form }} 
+
+                <h5 class="mt-4 mb-3"><i class="fas fa-box-open"></i> Detalles de Productos</h5>
+                
+                {# Errores de Formset (si existen) #}
+                {% if formset.non_field_errors %}
+                    <div class="alert alert-danger">{{ formset.non_field_errors }}</div>
+                {% endif %}
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped align-middle" id="detalle-formset-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">#</th>
+                                <th style="width: 45%;">Producto</th>
+                                <th style="width: 15%;">Cantidad</th>
+                                <th style="width: 20%;">Precio Unitario</th>
+                                <th style="width: 10%;" class="text-end">Subtotal</th>
+                                <th style="width: 5%;">Borrar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="formset-container">
+                            {# Itera sobre las filas existentes Y el empty_form #}
+                            {% for detalle_form in formset %}
+                            <tr class="formset-row {% if forloop.last and detalle_form.empty_form %}d-none{% endif %}"> {# Ocultamos el empty_form #}
+                                <td>{{ forloop.counter }}</td>
+                                
+                                {# Campos del formulario de detalle (sin add_class) #}
+                                <td>
+                                    {{ detalle_form.producto.errors }}
+                                    {{ detalle_form.producto }}
+                                </td>
+                                
+                                <td>
+                                    {{ detalle_form.cantidad.errors }}
+                                    {{ detalle_form.cantidad }}
+                                </td>
+                                
+                                <td>
+                                    {{ detalle_form.precio_unitario.errors }}
+                                    {{ detalle_form.precio_unitario }}
+                                </td>
+                                
+                                <td class="subtotal-cell text-end">
+                                    {# Muestra el subtotal inicial si existe #}
+                                    {% if detalle_form.instance.pk %}{{ detalle_form.instance.subtotal|floatformat:2|intcomma }}{% else %}0.00{% endif %}
+                                </td>
+                                
+                                <td class="text-center">
+                                    {% if detalle_form.instance.pk %}
+                                        {# Fila existente: usa el checkbox DELETE para eliminar #}
+                                        <div class="form-check form-switch d-inline-block">
+                                            {{ detalle_form.DELETE }}
+                                            <label class="form-check-label" for="{{ detalle_form.DELETE.id_for_label }}" title="Marcar para Eliminar"></label>
+                                        </div>
+                                    {% else %}
+                                        {# Fila nueva/vacía: usa el botón para remover del DOM #}
+                                        <button type="button" class="btn btn-sm btn-danger remove-formset-row">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    {% endif %}
+                                </td>
+                                
+                                {# Campos ocultos de metadatos #}
+                                {{ detalle_form.id }}
+                                {{ detalle_form.pedido }}
+                                {{ detalle_form.subtotal }} 
+                                {% for hidden in detalle_form.hidden_fields %}{{ hidden }}{% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" class="text-end"><strong>Total del Pedido:</strong></td>
+                                <td colspan="2" id="grand-total-display" class="text-end">
+                                    <strong><span id="display-total">${{ pedido.total|floatformat:2|intcomma }}</span></strong>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-between mt-3">
+                    <button type="button" class="btn btn-outline-primary" id="add-formset-row">
+                        <i class="fas fa-plus"></i> Añadir Producto
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Detalles y Total
+                    </button>
+                </div>
+            </form>
+            {% else %}
+            <div class="alert alert-info">
+                <h4 class="alert-heading">Pedido Cerrado</h4>
+                El pedido está marcado como **{{ pedido.estado }}**. No se pueden modificar los detalles.
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+{# === BLOQUE DE JAVASCRIPT === #}
+{% if puede_modificar %}
+    {# Si estás usando la librería jquery.formset, asegúrate de que esté disponible #}
+    {# <script src="{% static 'js/jquery.formset.js' %}"></script> #}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const formsetContainer = document.getElementById('formset-container');
+            const addButton = document.getElementById('add-formset-row');
+            let totalFormsInput = document.querySelector('input[name$="TOTAL_FORMS"]');
+            
+            // 1. Obtener la plantilla de formulario vacío (el empty_form de Django)
+            const emptyFormRow = formsetContainer.querySelector('.formset-row.d-none');
+            
+            if (!emptyFormRow) {
+                console.error("Error: No se encontró la plantilla de formulario vacío (empty_form).");
+                return;
+            }
+            
+            // 2. Función para actualizar los índices y numeración
+            function updateFormIndices() {
+                const rows = formsetContainer.querySelectorAll('.formset-row:not(.d-none)');
+                let totalFormsValue = 0;
+
+                rows.forEach((row, index) => {
+                    // Solo contamos y actualizamos las filas NO ocultas
+                    totalFormsValue++;
+                    row.querySelector('td:first-child').textContent = totalFormsValue; // Actualizar el número de fila visible
+
+                    // Reemplazar los índices en nombres e IDs de los inputs
+                    row.querySelectorAll('input, select, textarea').forEach(input => {
+                        const name = input.name;
+                        if (name) {
+                            // Reemplazar el índice entre guiones (por ejemplo, form-0-campo)
+                            input.name = name.replace(/-\d+-/g, `-${index}-`);
+                            input.id = input.id.replace(/-\d+-/g, `-${index}-`);
+                        }
+                    });
+                });
+                
+                // Actualizar el valor TOTAL_FORMS
+                totalFormsInput.value = totalFormsValue;
+                updateTotal(); 
+            }
+
+            // 3. Función para calcular subtotal y gran total
+            function updateTotal() {
+                let grandTotal = 0;
+                const rows = formsetContainer.querySelectorAll('.formset-row:not(.d-none)');
+                
+                rows.forEach(row => {
+                    // Verificar si la fila existente está marcada para borrado
+                    const deleteCheckbox = row.querySelector('input[name$="-DELETE"]');
+                    if (deleteCheckbox && deleteCheckbox.checked) {
+                        // Si está marcada para borrar, la saltamos del cálculo
+                        row.classList.add('table-danger');
+                        return;
+                    } else if (deleteCheckbox) {
+                        row.classList.remove('table-danger');
+                    }
+                    
+                    const quantityInput = row.querySelector('input[name$="-cantidad"]');
+                    const priceInput = row.querySelector('input[name$="-precio_unitario"]');
+                    const subtotalCell = row.querySelector('.subtotal-cell');
+
+                    const cantidad = parseFloat(quantityInput?.value.replace(/,/g, '.')) || 0;
+                    const precio = parseFloat(priceInput?.value.replace(/,/g, '.')) || 0;
+                    
+                    const subtotal = cantidad * precio;
+                    grandTotal += subtotal;
+                    
+                    // Actualizar el valor mostrado del subtotal (formateado)
+                    if (subtotalCell) {
+                        subtotalCell.textContent = subtotal.toLocaleString('es-PY', { minimumFractionDigits: 2 });
+                    }
+                });
+
+                // Actualizar el total general
+                const displayTotal = document.getElementById('display-total');
+                if (displayTotal) {
+                    displayTotal.textContent = '$' + grandTotal.toLocaleString('es-PY', { minimumFractionDigits: 2 });
+                }
+            }
+            
+            // 4. Delegación de eventos para inputs (cantidad y precio)
+            formsetContainer.addEventListener('input', function(e) {
+                // Si el input cambiado es cantidad o precio, recalcular
+                if (e.target.name && (e.target.name.includes('-cantidad') || e.target.name.includes('-precio_unitario'))) {
+                    updateTotal();
+                }
+            });
+            
+            // 5. Botón para añadir una nueva fila
+            addButton.addEventListener('click', function() {
+                const totalForms = parseInt(totalFormsInput.value);
+                
+                // Clonar la fila vacía y reemplazar el índice por el nuevo total
+                const newFormRow = emptyFormRow.cloneNode(true);
+                newFormRow.classList.remove('d-none');
+                
+                // Reemplazar '__prefix__' por el total actual de formularios (el índice del nuevo formulario)
+                const newRowHtml = newFormRow.innerHTML.replace(/__prefix__/g, totalForms);
+                newFormRow.innerHTML = newRowHtml;
+
+                // Limpiar valores por si la plantilla vacía ya tenía algo
+                newFormRow.querySelectorAll('input, select, textarea').forEach(input => {
+                    if (input.type !== 'hidden' && !input.name.includes('-DELETE')) {
+                        input.value = '';
+                    } else if (input.name.includes('-DELETE')) {
+                        input.checked = false; 
+                    }
+                });
+
+                formsetContainer.appendChild(newFormRow);
+                totalFormsInput.value = totalForms + 1; // Incrementar el total real de formularios
+                updateFormIndices(); // Reindexar y actualizar totales
+            });
+            
+            // 6. Delegación de eventos para eliminar filas
+            formsetContainer.addEventListener('click', function(e) {
+                // 1. Botón de eliminar (filas nuevas)
+                if (e.target.closest('.remove-formset-row')) {
+                    e.preventDefault();
+                    const row = e.target.closest('.formset-row');
+                    row.remove();
+                    updateFormIndices(); // Reindexar y actualizar totales
+                }
+                
+                // 2. Checkbox DELETE (filas existentes)
+                if (e.target.name && e.target.name.includes('-DELETE')) {
+                    updateTotal(); // Actualizar total para excluir el elemento
+                }
+            });
+
+            // Inicializar el cálculo al cargar la página
+            updateTotal(); 
+            
+            // Asegurar que el TOTAL_FORMS esté correcto al inicio (solo contando los que no son d-none)
+            updateFormIndices(); 
+        });
+    </script>
+{% endif %}
+{% endblock %}

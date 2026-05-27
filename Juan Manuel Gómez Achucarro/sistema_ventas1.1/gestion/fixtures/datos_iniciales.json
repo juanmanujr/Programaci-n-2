@@ -1,0 +1,307 @@
+[
+    
+
+    {
+        "model": "gestion.departamento",
+        "pk": 1,
+        "fields": {"nombre": "Central"}
+    },
+    {
+        "model": "gestion.departamento",
+        "pk": 2,
+        "fields": {"nombre": "Cordillera"}
+    },
+    {
+        "model": "gestion.ciudad",
+        "pk": 1,
+        "fields": {"nombre": "Asunción", "departamento": 1}
+    },
+    {
+        "model": "gestion.ciudad",
+        "pk": 2,
+        "fields": {"nombre": "San Lorenzo", "departamento": 1}
+    },
+    {
+        "model": "gestion.ciudad",
+        "pk": 3,
+        "fields": {"nombre": "Altos", "departamento": 2}
+    },
+    
+    {
+        "model": "gestion.cliente",
+        "pk": 1,
+        "fields": {
+            "nombre": "Juan", 
+            "apellido": "Pérez", 
+            "direccion": "Calle 1", 
+            "telefono": "0981123456", 
+            "email": "juan.perez@test.com", 
+            "fecha_registro": "2025-10-01"
+        }
+    },
+    {
+        "model": "gestion.cliente",
+        "pk": 2,
+        "fields": {
+            "nombre": "María", 
+            "apellido": "Gómez", 
+            "direccion": "Av. Principal", 
+            "telefono": "0971654321", 
+            "email": "maria.gomez@test.com", 
+            "fecha_registro": "2025-10-05"
+        }
+    },
+
+    {
+        "model": "gestion.proveedor",
+        "pk": 1,
+        "fields": {"nombre": "Distribuidora ABC", "contacto": "Carlos Vera", "telefono": "021555123", "email": "info@abc.com"}
+    },
+    {
+        "model": "gestion.proveedor",
+        "pk": 2,
+        "fields": {"nombre": "Tecno S.A.", "contacto": "Luisa Díaz", "telefono": "0991987654", "email": "ventas@tecno.com"}
+    },
+
+    {
+        "model": "gestion.empleado",
+        "pk": 1,
+        "fields": {"nombre": "Laura", "apellido": "Rojas", "cargo": "Gerente", "fecha_contratacion": "2024-01-01", "salario": "5000000.00"}
+    },
+    {
+        "model": "gestion.empleado",
+        "pk": 2,
+        "fields": {"nombre": "Andrés", "apellido": "Núñez", "cargo": "Vendedor", "fecha_contratacion": "2025-03-15", "salario": "2500000.00"}
+    },
+
+    {
+        "model": "gestion.categoriaproducto",
+        "pk": 1,
+        "fields": {"nombre": "Electrónica", "descripcion": "Componentes eléctricos y electrónicos."}
+    },
+    {
+        "model": "gestion.categoriaproducto",
+        "pk": 2,
+        "fields": {"nombre": "Accesorios", "descripcion": "Artículos complementarios."}
+    },
+    {
+        "model": "gestion.marca",
+        "pk": 1,
+        "fields": {"nombre": "TechPro"}
+    },
+    {
+        "model": "gestion.marca",
+        "pk": 2,
+        "fields": {"nombre": "Generic"}
+    },
+    
+    {
+        "model": "gestion.producto",
+        "pk": 101,
+        "fields": {
+            "nombre": "Cable HDMI 2m", 
+            "descripcion": "Cable de alta velocidad.", 
+            "precio": "55000.00", 
+            "stock": 50, 
+            "stock_minimo": 10,
+            "proveedor": 1, 
+            "categoria": 1, 
+            "marca": 1
+        }
+    },
+    {
+        "model": "gestion.producto",
+        "pk": 102,
+        "fields": {
+            "nombre": "Mouse Óptico USB", 
+            "descripcion": "Mouse estándar.", 
+            "precio": "30000.00", 
+            "stock": 15, 
+            "stock_minimo": 5,
+            "proveedor": 2, 
+            "categoria": 2, 
+            "marca": 2
+        }
+    },
+
+    {
+        "model": "gestion.venta",
+        "pk": 1,
+        "fields": {
+            "fecha": "2025-11-15T10:00:00", 
+            "cliente": 1, 
+            "empleado": 2, 
+            "total": "85000.00", 
+            "estado": "Finalizada"
+        }
+    },
+
+    {
+        "model": "gestion.detalleventa",
+        "pk": 1,
+        "fields": {
+            "venta": 1, 
+            "producto": 101, 
+            "cantidad": 1, 
+            "precio_unitario": "55000.00", 
+            "subtotal": "55000.00"
+        }
+    },
+    {
+        "model": "gestion.detalleventa",
+        "pk": 2,
+        "fields": {
+            "venta": 1, 
+            "producto": 102, 
+            "cantidad": 1, 
+            "precio_unitario": "30000.00", 
+            "subtotal": "30000.00"
+        }
+    },
+
+    {
+        "model": "gestion.compra",
+        "pk": 1,
+        "fields": {
+            "fecha": "2025-11-01T15:00:00", 
+            "proveedor": 1, 
+            "empleado": 1, 
+            "total": "500000.00", 
+            "estado": "Finalizada"
+        }
+    },
+
+    {
+        "model": "gestion.detallecompra",
+        "pk": 1,
+        "fields": {
+            "compra": 1, 
+            "producto": 101, 
+            "cantidad": 10, 
+            "precio_compra": "35000.00", 
+            "subtotal": "350000.00"
+        }
+    },
+    
+    {
+        "model": "gestion.caja",
+        "pk": 1,
+        "fields": {
+            "nombre": "Caja Principal", 
+            "empleado_responsable": 1, 
+            "monto_inicial": "100000.00", 
+            "fecha_apertura": "2025-11-17T08:00:00", 
+            "estado": "Abierta"
+        }
+    },
+    
+    {
+        "model": "gestion.cuentaacobrar",
+        "pk": 1,
+        "fields": {
+            "cliente": 2, 
+            "venta": 1, 
+            "fecha_vencimiento": "2025-12-15", 
+            "monto_original": "85000.00", 
+            "monto_pendiente": "40000.00", 
+            "estado": "Pendiente"
+        }
+    },
+    
+    {
+        "model": "gestion.cuentaapagar",
+        "pk": 1,
+        "fields": {
+            "proveedor": 1, 
+            "compra": 1, 
+            "fecha_vencimiento": "2025-12-01", 
+            "monto_original": "500000.00", 
+            "monto_pendiente": "500000.00", 
+            "estado": "Pendiente"
+        }
+    },
+    
+    {
+        "model": "gestion.moneda",
+        "pk": 1,
+        "fields": {"nombre": "Guaraní", "simbolo": "Gs", "tipo_cambio": "1.0000"}
+    },
+
+    {
+        "model": "gestion.cobro",
+        "pk": 1,
+        "fields": {
+            "cliente": 1, 
+            "fecha_cobro": "2025-11-17T12:00:00", 
+            "monto_total": "45000.00", 
+            "moneda": 1, 
+            "caja": 1
+        }
+    },
+
+    {
+        "model": "gestion.cobrodetalle",
+        "pk": 1,
+        "fields": {
+            "cobro": 1, 
+            "cuenta_a_cobrar": 1, 
+            "monto_aplicado": "45000.00"
+        }
+    },
+    
+    {
+        "model": "gestion.ordendepago",
+        "pk": 1,
+        "fields": {
+            "proveedor": 1, 
+            "fecha_orden": "2025-11-16T09:00:00", 
+            "monto_total": "100000.00", 
+            "moneda": 1, 
+            "empleado": 1, 
+            "estado": "Pendiente"
+        }
+    },
+
+    {
+        "model": "gestion.ordendepagodetalle",
+        "pk": 1,
+        "fields": {
+            "orden_pago": 1, 
+            "cuenta_a_pagar": 1, 
+            "monto_aplicado": "100000.00"
+        }
+    },
+
+    {
+        "model": "gestion.ajustetipo",
+        "pk": 1,
+        "fields": {"nombre": "Merma por Vencimiento", "es_entrada": false}
+    },
+    {
+        "model": "gestion.ajustetipo",
+        "pk": 2,
+        "fields": {"nombre": "Conteo Físico (Sobrante)", "es_entrada": true}
+    },
+    
+    {
+        "model": "gestion.ajuste",
+        "pk": 1,
+        "fields": {
+            "fecha": "2025-11-17T14:00:00", 
+            "empleado": 1, 
+            "motivo_general": "Ajuste de inventario mensual por control de calidad."
+        }
+    },
+
+    {
+        "model": "gestion.ajustedetalle",
+        "pk": 1,
+        "fields": {
+            "ajuste": 1, 
+            "producto": 102, 
+            "tipo_ajuste": 1, 
+            "cantidad": 3, 
+            "observaciones": "Tres unidades del mouse expiraron la garantía."
+        }
+    }
+]

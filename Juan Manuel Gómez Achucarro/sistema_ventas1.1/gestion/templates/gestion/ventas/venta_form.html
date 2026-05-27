@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        
+        <h2 class="mt-4 mb-4">{{ titulo_pagina }}</h2>
+        
+        {# Mensaje informativo para el usuario #}
+        <p class="alert alert-info"><i class="fas fa-info-circle"></i> Esta vista solo registra la cabecera de la venta. El detalle de productos se añadirá después.</p>
+
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-hand-holding-usd"></i> Datos de la Venta
+            </div>
+            
+            <div class="card-body">
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {# Renderizar errores de formulario generales (si los hay) #}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in form.non_field_errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    {# Renderizar todos los campos del VentaForm. #}
+                    {# Si usas Bootstrap, es mejor renderizar campo por campo, pero con .as_p es funcional. #}
+                    {{ form.as_p }}
+
+                    <div class="d-flex justify-content-end mt-4">
+                        {# Botón que envía el POST y crea la cabecera de la venta #}
+                        <button type="submit" class="btn btn-success me-2">
+                            <i class="fas fa-check-circle"></i> Continuar y Crear
+                        </button>
+                        {# Enlace para cancelar y volver al listado #}
+                        <a href="{% url 'venta_lista' %}" class="btn btn-secondary">
+                            <i class="fas fa-times-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}
