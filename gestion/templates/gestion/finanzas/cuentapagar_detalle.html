@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalle Cuenta por Pagar #{{ cuenta_pagar.id }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h2 class="mt-4 mb-4">
+            <i class="fas fa-file-invoice-dollar"></i> Detalle Cuenta por Pagar #{{ cuenta_pagar.id }}
+        </h2>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'cuentapagar_lista' %}" class="btn btn-secondary mt-4">
+            <i class="fas fa-arrow-left"></i> Volver a la Lista
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Información General</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th width="40%">Proveedor:</th>
+                        <td>{{ cuenta_pagar.proveedor.nombre }}</td>
+                    </tr>
+                    <tr>
+                        <th>Compra Relacionada:</th>
+                        <td>
+                            {% if cuenta_pagar.compra and cuenta_pagar.compra.id %}
+                                <a href="{% url 'compra_detalle' pk=cuenta_pagar.compra.id %}">
+                                    Compra #{{ cuenta_pagar.compra.id }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">Sin compra asociada</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Monto Original:</th>
+                        <td><strong>$ {{ cuenta_pagar.monto_original|floatformat:2 }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Saldo Pendiente:</th>
+                        <td><strong>$ {{ cuenta_pagar.monto_pendiente|floatformat:2 }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Fecha Creación:</th>
+                        <td>{{ cuenta_pagar.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Fecha Vencimiento:</th>
+                        <td>
+                            {{ cuenta_pagar.fecha_vencimiento|date:"d/m/Y" }}
+                            {% if cuenta_pagar.esta_vencida and cuenta_pagar.estado != 'PAGADA' %}
+                            <span class="badge bg-danger ms-2">VENCIDA</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Estado:</th>
+                        <td>
+                            <span class="badge {% if cuenta_pagar.estado == 'PENDIENTE' %}bg-warning{% elif cuenta_pagar.estado == 'PAGADA' %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ cuenta_pagar.get_estado_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% if cuenta_pagar.fecha_pago %}
+                    <tr>
+                        <th>Fecha Pago:</th>
+                        <td>{{ cuenta_pagar.fecha_pago|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if cuenta_pagar.metodo_pago %}
+                    <tr>
+                        <th>Método de Pago:</th>
+                        <td>{{ cuenta_pagar.get_metodo_pago_display }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if cuenta_pagar.observaciones %}
+                    <tr>
+                        <th>Observaciones:</th>
+                        <td>{{ cuenta_pagar.observaciones }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Historial de Pagos</h5>
+            </div>
+            <div class="card-body">
+                {% if cuenta_pagar.pagos.exists %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Monto</th>
+                                <th>Método</th>
+                                <th>Referencia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pago in cuenta_pagar.pagos.all %}
+                            <tr>
+                                <td>{{ pago.fecha_pago|date:"d/m/Y" }}</td>
+                                <td>$ {{ pago.monto|floatformat:2 }}</td>
+                                <td>{{ pago.get_metodo_display }}</td>
+                                <td>{{ pago.referencia|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-secondary">
+                                <th>Total Pagado:</th>
+                                <th colspan="3">
+                                    $ {{ cuenta_pagar.pagos_total|default:"0.00"|floatformat:2 }}
+                                </th>
+                            </tr>
+                            <tr class="table-secondary">
+                                <th>Saldo Pendiente:</th>
+                                <th colspan="3">
+                                    $ {{ cuenta_pagar.monto_pendiente|floatformat:2 }}
+                                </th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">No hay pagos registrados.</p>
+                {% endif %}
+                
+                {% if cuenta_pagar.estado == 'PENDIENTE' %}
+                <div class="text-center mt-3">
+                    <a href="#" class="btn btn-success btn-sm" onclick="alert('Funcionalidad de pago en desarrollo')">
+                        <i class="fas fa-money-check-alt"></i> Registrar Pago
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="fas fa-cogs"></i> Acciones</h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="btn-group" role="group">
+                    {% if cuenta_pagar.id %}
+                        <a href="{% url 'cuentapagar_update' pk=cuenta_pagar.id %}" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                    {% endif %}
+                    
+                    {% if cuenta_pagar.estado == 'PENDIENTE' %}
+                        <form method="post" action="{% url 'cuentapagar_update' pk=cuenta_pagar.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="estado" value="PAGADA">
+                            <button type="submit" class="btn btn-success" 
+                                    onclick="return confirm('¿Marcar como PAGADA?')">
+                                <i class="fas fa-check-circle"></i> Marcar Pagada
+                            </button>
+                        </form>
+                    {% endif %}
+                    
+                    <a href="{% url 'cuentapagar_lista' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cerrar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

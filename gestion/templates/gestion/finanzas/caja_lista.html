@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Cajas - {{ block.super }}{% endblock %}
+
+{% block content %}
+<h2 class="mt-4 mb-4"><i class="fas fa-cash-register"></i> Gestión de Cajas</h2>
+
+{% if ya_existe_caja_abierta %}
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle"></i> 
+    <strong>Atención:</strong> Ya existe una caja abierta ({{ caja_abierta_actual.nombre }}). 
+    Debe cerrarla antes de abrir una nueva.
+</div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="btn-group" role="group">
+            <a href="{% url 'caja_crear' %}" class="btn btn-success {% if caja_abierta %}disabled{% endif %}">
+                <i class="fas fa-lock-open"></i> Nueva Apertura
+            </a>
+            
+            {% if caja_abierta %}
+            <a href="{% url 'arqueo_crear' %}?caja={{ caja_abierta.id }}" class="btn btn-primary">
+                <i class="fas fa-calculator"></i> Arqueo de Caja
+            </a>
+            <a href="{% url 'caja_cerrar' pk=caja_abierta.id %}" class="btn btn-danger">
+                <i class="fas fa-lock"></i> Cerrar Caja
+            </a>
+            {% else %}
+            <button class="btn btn-primary" disabled>
+                <i class="fas fa-calculator"></i> Arqueo de Caja
+            </button>
+            <button class="btn btn-danger" disabled>
+                <i class="fas fa-lock"></i> Cerrar Caja
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-md-4 text-end">
+        <div class="card {% if caja_abierta %}bg-success text-white{% else %}bg-danger text-white{% endif %}">
+            <div class="card-body py-2">
+                <small>Estado Actual:</small>
+                <h5 class="mb-0">
+                    {% if caja_abierta %}
+                    <i class="fas fa-lock-open"></i> Caja Abierta: {{ caja_abierta.nombre }}
+                    {% else %}
+                    <i class="fas fa-lock"></i> Todas las Cajas Cerradas
+                    {% endif %}
+                </h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-chart-bar"></i> Estadísticas
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <span>Total Cajas:</span>
+                    <strong>{{ total_cajas }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Cajas Abiertas:</span>
+                    <strong class="text-success">{{ cajas_abiertas_count }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Cajas Cerradas:</span>
+                    <strong class="text-secondary">{{ cajas_cerradas_count }}</strong>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <span>Total Monto Inicial:</span>
+                    <strong>$ {{ total_monto_inicial|floatformat:2 }}</strong>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <i class="fas fa-users"></i> Cajas Activas ({{ cajas_abiertas_count }})
+            </div>
+            <div class="card-body">
+                {% if cajas_abiertas %}
+                <ul class="list-unstyled">
+                    {% for caja in cajas_abiertas %}
+                    <li class="mb-2">
+                        <i class="fas fa-cash-register text-primary mr-2"></i>
+                        <strong>{{ caja.nombre }}</strong><br>
+                        <small class="text-muted">{{ caja.empleado_responsable }}</small>
+                        <span class="badge badge-success float-right">Abierta</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0 text-center">
+                    <i class="fas fa-lock fa-2x"></i><br>
+                    No hay cajas activas
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Historial de Cajas</h5>
+            </div>
+            <div class="card-body">
+                {% if cajas %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Caja</th>
+                                <th>Responsable</th>
+                                <th>Apertura</th>
+                                <th>Cierre</th>
+                                <th>Monto Inicial</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for caja in cajas %}
+                            <tr>
+                                <td>{{ caja.id }}</td>
+                                <td>{{ caja.nombre }}</td>
+                                <td>{{ caja.empleado_responsable }}</td>
+                                <td>{{ caja.fecha_apertura|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    {% if caja.fecha_cierre %}
+                                    {{ caja.fecha_cierre|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>$ {{ caja.monto_inicial|floatformat:2 }}</td>
+                                <td>
+                                    <span class="badge {% if caja.estado == 'Abierta' %}badge-success{% else %}badge-secondary{% endif %}">
+                                        {{ caja.estado }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'caja_detalle' pk=caja.id %}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if caja.estado == 'Abierta' %}
+                                    <a href="{% url 'caja_cerrar' pk=caja.id %}" class="btn btn-sm btn-danger" title="Cerrar Caja">
+                                        <i class="fas fa-lock"></i>
+                                    </a>
+                                    <a href="{% url 'arqueo_crear' %}?caja={{ caja.id }}" class="btn btn-sm btn-primary" title="Realizar Arqueo">
+                                        <i class="fas fa-calculator"></i>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Paginación -->
+                {% if is_paginated %}
+                <nav aria-label="Paginación">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1">&laquo; Primera</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                        </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+                        
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última &raquo;</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-cash-register fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No hay cajas registradas</h4>
+                    <p class="text-muted">Comienza abriendo tu primera caja.</p>
+                    <a href="{% url 'caja_crear' %}" class="btn btn-success btn-lg {% if caja_abierta %}disabled{% endif %}">
+                        <i class="fas fa-lock-open"></i> Abrir Primera Caja
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <i class="fas fa-lightbulb"></i> Proceso de Apertura
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li><strong>Seleccionar usuario</strong> responsable de la caja</li>
+                    <li><strong>Ingresar saldo inicial</strong> en efectivo</li>
+                    <li><strong>Verificar fondos</strong> con el conteo físico</li>
+                    <li><strong>Confirmar apertura</strong> para habilitar operaciones</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-check-circle"></i> Proceso de Cierre
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li><strong>Realizar arqueo</strong> de fondos disponibles</li>
+                    <li><strong>Comparar con sistema</strong> para detectar diferencias</li>
+                    <li><strong>Registrar observaciones</strong> si hay discrepancias</li>
+                    <li><strong>Generar reporte</strong> de cierre del día</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header bg-warning text-dark">
+        <i class="fas fa-exclamation-triangle"></i> Importante
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="text-center">
+                    <i class="fas fa-user-shield fa-2x text-primary mb-2"></i>
+                    <h6>Responsabilidad</h6>
+                    <p class="small text-muted">Cada usuario es responsable de su caja asignada.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center">
+                    <i class="fas fa-receipt fa-2x text-success mb-2"></i>
+                    <h6>Comprobantes</h6>
+                    <p class="small text-muted">Todos los movimientos deben tener comprobante.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center">
+                    <i class="fas fa-file-invoice-dollar fa-2x text-danger mb-2"></i>
+                    <h6>Reportes</h6>
+                    <p class="small text-muted">Genera reportes diarios para control interno.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Agregar tooltips a los botones
+    $('[title]').tooltip();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Editar{% else %}Nueva{% endif %} Cuenta por Cobrar{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-file-invoice"></i>
+                        {% if object %}Editar Cuenta por Cobrar #{{ object.id }}{% else %}Nueva Cuenta por Cobrar{% endif %}
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            <p class="mb-0">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Cliente -->
+                        <div class="form-group">
+                            <label for="{{ form.cliente.id_for_label }}" class="font-weight-bold">
+                                {{ form.cliente.label }}
+                            </label>
+                            {{ form.cliente }}
+                            {% if form.cliente.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.cliente.errors %}
+                                <p class="mb-0">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Venta (opcional) -->
+                        <div class="form-group">
+                            <label for="{{ form.venta.id_for_label }}">
+                                {{ form.venta.label }}
+                            </label>
+                            {{ form.venta }}
+                            {% if form.venta.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.venta.errors %}
+                                <p class="mb-0">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Opcional. Selecciona una venta relacionada si corresponde.</small>
+                        </div>
+                        
+                        <!-- Montos -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.monto_original.id_for_label }}" class="font-weight-bold">
+                                        {{ form.monto_original.label }}
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">$</span>
+                                        </div>
+                                        {{ form.monto_original }}
+                                    </div>
+                                    {% if form.monto_original.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.monto_original.errors %}
+                                        <p class="mb-0">{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.monto_pendiente.id_for_label }}" class="font-weight-bold">
+                                        {{ form.monto_pendiente.label }}
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">$</span>
+                                        </div>
+                                        {{ form.monto_pendiente }}
+                                    </div>
+                                    {% if form.monto_pendiente.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.monto_pendiente.errors %}
+                                        <p class="mb-0">{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Fecha y Estado -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.fecha_vencimiento.id_for_label }}" class="font-weight-bold">
+                                        {{ form.fecha_vencimiento.label }}
+                                    </label>
+                                    {{ form.fecha_vencimiento }}
+                                    {% if form.fecha_vencimiento.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.fecha_vencimiento.errors %}
+                                        <p class="mb-0">{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.estado.id_for_label }}" class="font-weight-bold">
+                                        {{ form.estado.label }}
+                                    </label>
+                                    {{ form.estado }}
+                                    {% if form.estado.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.estado.errors %}
+                                        <p class="mb-0">{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Descripción -->
+                        <div class="form-group">
+                            <label for="{{ form.descripcion.id_for_label }}">
+                                {{ form.descripcion.label }}
+                            </label>
+                            {{ form.descripcion }}
+                            {% if form.descripcion.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.descripcion.errors %}
+                                <p class="mb-0">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i>
+                                {% if object %}Actualizar{% else %}Crear{% endif %} Cuenta
+                            </button>
+                            <a href="{% url 'cuentacobrar_lista' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            
+                            {% if object %}
+                            <a href="{% url 'cuentacobrar_detalle' pk=object.id %}" class="btn btn-info">
+                                <i class="fas fa-eye"></i> Ver Detalle
+                            </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+                
+                {% if object %}
+                <div class="card-footer bg-light">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar-plus"></i>
+                                Creada: 
+                                {% if object.fecha_creacion %}
+                                {{ object.fecha_creacion|date:"d/m/Y" }}
+                                {% else %}
+                                No registrada
+                                {% endif %}
+                            </small>
+                        </div>
+                        <div class="col-md-6 text-right">
+                            <small class="text-muted">
+                                ID: {{ object.id }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// JavaScript simple sin errores
+document.addEventListener('DOMContentLoaded', function() {
+    // Si es nueva cuenta, establecer fecha por defecto (7 días desde hoy)
+    var fechaInput = document.getElementById('id_fecha_vencimiento');
+    if (fechaInput && !fechaInput.value) {
+        var nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        var year = nextWeek.getFullYear();
+        var month = String(nextWeek.getMonth() + 1).padStart(2, '0');
+        var day = String(nextWeek.getDate()).padStart(2, '0');
+        fechaInput.value = year + '-' + month + '-' + day;
+    }
+    
+    // Si monto pendiente está vacío, copiar monto original
+    var montoOriginal = document.getElementById('id_monto_original');
+    var montoPendiente = document.getElementById('id_monto_pendiente');
+    
+    if (montoOriginal && montoPendiente) {
+        montoOriginal.addEventListener('input', function() {
+            if (!montoPendiente.value || montoPendiente.value === '' || montoPendiente.value === '0') {
+                montoPendiente.value = montoOriginal.value;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Arqueo de Caja - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-calculator"></i> Arqueo de Caja</h4>
+            </div>
+            <div class="card-body">
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Proceso de arqueo:</strong> Compare el monto físico con el monto del sistema.
+                </div>
+                
+                <!-- Mostrar errores del formulario -->
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                    <i class="fas fa-exclamation-circle"></i> {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="{{ form.caja.id_for_label }}">{{ form.caja.label }}</label>
+                        {{ form.caja }}
+                        {% if form.caja.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.caja.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.empleado.id_for_label }}">{{ form.empleado.label }}</label>
+                        {{ form.empleado }}
+                        {% if form.empleado.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.empleado.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.monto_contado.id_for_label }}">{{ form.monto_contado.label }}</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">$</span>
+                            </div>
+                            {{ form.monto_contado }}
+                        </div>
+                        {% if form.monto_contado.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.monto_contado.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Monto contado físicamente</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.monto_sistema.id_for_label }}">{{ form.monto_sistema.label }}</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">$</span>
+                            </div>
+                            {{ form.monto_sistema }}
+                        </div>
+                        {% if form.monto_sistema.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.monto_sistema.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Monto según sistema</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.observaciones.id_for_label }}">{{ form.observaciones.label }}</label>
+                        {{ form.observaciones }}
+                        {% if form.observaciones.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.observaciones.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Observaciones sobre el arqueo</small>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="cerrar_caja" name="cerrar_caja">
+                        <label class="form-check-label" for="cerrar_caja">
+                            <strong>Cerrar caja después del arqueo</strong>
+                        </label>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end">
+                        <a href="{% url 'caja_lista' %}" class="btn btn-secondary mr-2">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check"></i> Registrar Arqueo
+                        </button>
+                    </div>
+                </form>
+                
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

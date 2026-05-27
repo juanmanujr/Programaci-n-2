@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalle de Compra #{{ compra.id }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mt-4 mb-4">
+            <i class="fas fa-receipt"></i> Detalle de Compra #{{ compra.id }}
+            <span class="badge 
+                {% if compra.estado == 'FINALIZADA' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                {{ compra.get_estado_display }}
+            </span>
+        </h2>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-info-circle"></i> Información General
+            </div>
+            <div class="card-body">
+                <p><strong>Proveedor:</strong> {{ compra.proveedor }}</p>
+                <p><strong>Fecha de Compra:</strong> {{ compra.fecha|date:"d/m/Y H:i" }}</p>
+                <p class="h4 mt-3"><strong>Total de Compra:</strong> $<span id="compra-total">{{ compra.total|floatformat:2 }}</span></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        {% if compra.estado != 'FINALIZADA' %}
+        <div class="card shadow h-100 bg-light">
+            <div class="card-body d-flex flex-column justify-content-between">
+                <h5>Acción Crítica</h5>
+                <p class="text-danger">**¡IMPORTANTE!** Finalizar esta compra aumentará permanentemente el stock de los productos.</p>
+                
+                <form method="post" action="{% url 'compra_finalizar' pk=compra.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-block btn-success" 
+                            onclick="return confirm('¿Está seguro de que desea FINALIZAR esta compra? El stock será actualizado.')">
+                        <i class="fas fa-check-double"></i> FINALIZAR Y AUMENTAR STOCK
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="card shadow h-100 bg-success text-white">
+            <div class="card-body d-flex align-items-center">
+                <h4 class="m-0"><i class="fas fa-warehouse"></i> Compra Finalizada. Stock ingresado.</h4>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<hr>
+
+<div class="row">
+    <div class="col-12">
+        <h3><i class="fas fa-box-open"></i> Detalles de Productos (Formulario de Edición)</h3>
+        
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if compra.estado != 'FINALIZADA' %}
+        
+        {# 🔑 CORRECCIÓN: Agregar la acción correcta al formulario #}
+        <form method="post" id="form-detalles" action="{% url 'compra_detalle' pk=compra.pk %}">
+            {% csrf_token %}
+    
+            {# Campos de Cabecera Ocultos (CRÍTICO para pasar la validación del POST) #}
+            {{ form.proveedor.as_hidden }}
+            {{ form.empleado.as_hidden }}
+            {{ form.estado.as_hidden }}
+            {{ form.fecha_de_compra.as_hidden }}
+    
+            {{ formset.management_form }}
+    
+            <table class="table table-bordered table-sm" id="detalle-tabla">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Producto</th>
+                        <th style="width: 20%;">Cantidad</th>
+                        <th style="width: 20%;">Precio Compra Unit.</th>
+                        <th style="width: 20%;">Subtotal</th>
+                        <th style="width: 10%;">Eliminar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for form_detalle in formset %}
+                    <tr class="formset-row">
+                        {% for hidden in form_detalle.hidden_fields %}{{ hidden }}{% endfor %}
+
+                        <td>
+                            {{ form_detalle.producto.errors }}
+                            {{ form_detalle.producto }}
+                        </td>
+                        <td>
+                            {{ form_detalle.cantidad.errors }}
+                            {{ form_detalle.cantidad }}
+                        </td>
+                        <td>
+                            {# 🔑 CORRECCIÓN: Usar el nombre de campo que genera el error: 'precio_compra' #}
+                            {{ form_detalle.precio_compra.errors }}
+                            {{ form_detalle.precio_compra }}
+                        </td>
+                        <td class="subtotal-cell">
+                            $ 0.00 
+                        </td>
+                        <td>
+                            {{ form_detalle.DELETE }}
+                            <label for="{{ form_detalle.DELETE.id_for_label }}">Marcar para Eliminar</label>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Guardar Detalles y Actualizar Total
+                </button>
+                <a href="{% url 'compra_lista' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver a Compras
+                </a>
+            </div>
+        </form>
+
+        {% else %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Precio Compra Unit.</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detalle in detalles %}
+                    <tr>
+                        <td>{{ detalle.producto.nombre }}</td>
+                        <td>{{ detalle.cantidad }}</td>
+                        <td>$ {{ detalle.precio_compra|floatformat:2 }}</td>
+                        <td>$ {{ detalle.subtotal|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">Esta compra no tiene detalles.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 🔑 CRÍTICO: El campo de precio, según el error de Django, se llama 'precio_compra'
+        const PRICE_FIELD_NAME = 'precio_compra'; 
+        const totalDisplay = document.getElementById('compra-total');
+        
+        // Función para calcular y actualizar el TOTAL de toda la compra
+        function updateTotal() {
+            let grandTotal = 0;
+            
+            // Recorre todas las filas que no están marcadas para eliminación
+            document.querySelectorAll('.formset-row').forEach(row => {
+                const deleteCheckbox = row.querySelector('[id$="-DELETE"]');
+                
+                // Solo cuenta las filas que NO están marcadas para eliminar
+                if (!deleteCheckbox || !deleteCheckbox.checked) {
+                    const quantityInput = row.querySelector('[id$="-cantidad"]');
+                    // Usar el nombre de campo correcto para el precio
+                    const priceInput = row.querySelector('[id$="-' + PRICE_FIELD_NAME + '"]'); 
+                    
+                    let quantity = parseFloat(quantityInput ? quantityInput.value : 0) || 0;
+                    let price = parseFloat(priceInput ? priceInput.value : 0) || 0;
+                    
+                    grandTotal += (quantity * price);
+                }
+            });
+
+            if (totalDisplay) {
+                // Actualizar el valor mostrado en la cabecera
+                totalDisplay.innerHTML = grandTotal.toFixed(2);
+            }
+            return grandTotal;
+        }
+
+        // Función para calcular y actualizar el subtotal de una fila
+        function updateSubtotal(row) {
+            const quantityInput = row.querySelector('[id$="-cantidad"]');
+            // Usar el nombre de campo correcto para el precio
+            const priceInput = row.querySelector('[id$="-' + PRICE_FIELD_NAME + '"]'); 
+            const subtotalCell = row.querySelector('.subtotal-cell');
+
+            let quantity = parseFloat(quantityInput ? quantityInput.value : 0) || 0;
+            let price = parseFloat(priceInput ? priceInput.value : 0) || 0;
+            
+            let subtotal = quantity * price;
+
+            if (subtotalCell) {
+                // Formatear a dos decimales
+                subtotalCell.innerHTML = '$ ' + subtotal.toFixed(2);
+            }
+            // CRÍTICO: Llama a la función de Total después de actualizar el Subtotal
+            updateTotal(); 
+        }
+
+        // Función para inicializar y asignar eventos
+        function initializeFormsetRow(row) {
+            // Inicializar los subtotales y el total al cargar
+            updateSubtotal(row); 
+
+            // Asignar eventos de cambio a Cantidad y Precio
+            row.querySelectorAll('[id$="-cantidad"], [id$="-' + PRICE_FIELD_NAME + '"]').forEach(input => {
+                // Usamos 'input' en lugar de 'change' y 'keyup' para mejor manejo
+                input.addEventListener('input', () => updateSubtotal(row));
+            });
+            
+            // Asignar evento al checkbox de eliminación (DELETE)
+            const deleteCheckbox = row.querySelector('[id$="-DELETE"]');
+            if (deleteCheckbox) {
+                deleteCheckbox.addEventListener('change', () => {
+                    // Si se marca/desmarca, recalcular el total
+                    updateTotal();
+                    // Opcional: Estilo visual para la fila eliminada
+                    row.style.textDecoration = deleteCheckbox.checked ? 'line-through' : 'none';
+                    row.style.opacity = deleteCheckbox.checked ? '0.6' : '1';
+                });
+            }
+        }
+
+        // 1. Asignar evento a todos los campos al cargar la página (para filas existentes)
+        document.querySelectorAll('.formset-row').forEach(initializeFormsetRow);
+    });
+</script>
+{% endblock %}

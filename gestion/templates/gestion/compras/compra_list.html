@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<h2 class="mt-4 mb-4">{{ titulo_pagina }}</h2>
+
+<div class="d-flex justify-content-end mb-3">
+    <a href="{% url 'compra_crear' %}" class="btn btn-success">
+        <i class="fas fa-plus-circle"></i> Registrar Nueva Compra
+    </a>
+</div>
+
+<div class="card shadow">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="fas fa-truck-moving"></i> Compras Registradas (Total: {{ compras|length }})</h5>
+    </div>
+    <div class="card-body">
+        {% if compras %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Proveedor</th>
+                        <th>Estado</th>
+                        <th>Total</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for compra in compras %}
+                    <tr>
+                        <td>{{ compra.id }}</td>
+                        <td>{{ compra.fecha|date:"d/m/Y H:i" }}</td>
+                        <td>{{ compra.proveedor }}</td>
+                        <td>{{ compra.get_estado_display }}</td>
+                        <td>$ {{ compra.total|floatformat:2 }}</td>
+                        <td class="text-nowrap">
+                            {# Enlace a Detalle (Correcto) #}
+                            <a href="{% url 'compra_detalle' pk=compra.pk %}" class="btn btn-sm btn-info" title="Ver Detalle / Editar Items"><i class="fas fa-search"></i> Detalle</a>
+                            
+                            {% if compra.estado != 'FINALIZADA' %}
+                            {# Enlace a Editar CABECERA (CORREGIDO: cambia compra_editar_cabecera por compra_editar) #}
+                            <a href="{% url 'compra_editar' pk=compra.pk %}" class="btn btn-sm btn-warning" title="Editar Cabecera"><i class="fas fa-edit"></i> Editar</a>
+                            {% else %}
+                            <button class="btn btn-sm btn-warning disabled" title="Compra Finalizada" disabled><i class="fas fa-edit"></i> Editar</button>
+                            {% endif %}
+                            
+                            {% if compra.estado != 'FINALIZADA' %}
+                            {# Enlace a Eliminar (Correcto) #}
+                            <a href="{% url 'compra_eliminar' pk=compra.pk %}" class="btn btn-sm btn-danger" title="Eliminar"><i class="fas fa-trash-alt"></i> Eliminar</a>
+                            {% else %}
+                            <button class="btn btn-sm btn-danger disabled" title="No se puede eliminar una Compra Finalizada" disabled><i class="fas fa-trash-alt"></i> Eliminar</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center">No hay compras registradas.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info" role="alert">
+            No hay compras registradas aún.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

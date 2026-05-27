@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Proveedor: {{ proveedor.nombre }}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="display-4">📦 Detalle del Proveedor: {{ proveedor.nombre }}</h2>
+    <a href="{% url 'proveedor_lista' %}" class="btn btn-secondary btn-lg">
+        <i class="fas fa-arrow-left"></i> Volver al Listado
+    </a>
+</div>
+
+<hr>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Información General</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>ID:</strong> {{ proveedor.pk }}</p>
+                <p><strong>Razón Social/Nombre:</strong> {{ proveedor.nombre }}</p>
+                {# Se eliminó RUC/NIT: {{ proveedor.ruc_nit }} #}
+                <p><strong>Teléfono:</strong> {{ proveedor.telefono|default:"N/A" }}</p>
+                <p><strong>Email:</strong> {{ proveedor.email|default:"N/A" }}</p>
+                <p><strong>Dirección:</strong> {{ proveedor.direccion|default:"N/A" }}</p>
+                {# Se eliminó Fecha de Registro: {{ proveedor.fecha_registro|date:"d/m/Y" }} #}
+                
+                <div class="mt-4">
+                    <a href="{% url 'proveedor_editar' proveedor.pk %}" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> Editar Proveedor
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

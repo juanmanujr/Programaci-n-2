@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalle de Cuenta por Cobrar #{{ cuenta_cobrar.id }}{% endblock %}
+
+{% block content %}
+<h2 class="mt-4 mb-4">Detalle de Cuenta por Cobrar #{{ cuenta_cobrar.id }}</h2>
+
+<div class="alert alert-success">
+    <i class="fas fa-check-circle"></i> 
+    Vista de detalle habilitada.
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Información de la Cuenta</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>ID:</strong> {{ cuenta_cobrar.id }}</p>
+                <p><strong>Cliente:</strong> 
+                    {% if cuenta_cobrar.cliente %}
+                    {{ cuenta_cobrar.cliente.nombre }}
+                    {% else %}
+                    <span class="text-muted">Cliente no disponible</span>
+                    {% endif %}
+                </p>
+                <p><strong>Venta Relacionada:</strong> 
+                    {% if cuenta_cobrar.venta %}
+                    Venta #{{ cuenta_cobrar.venta.id }}
+                    {% else %}
+                    <span class="text-muted">No relacionada a venta</span>
+                    {% endif %}
+                </p>
+                <p><strong>Fecha de Creación:</strong> 
+                    {% if cuenta_cobrar.fecha_creacion %}
+                    {{ cuenta_cobrar.fecha_creacion|date:"d/m/Y" }}
+                    {% else %}
+                    <span class="text-muted">No registrada</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Fecha de Vencimiento:</strong> {{ cuenta_cobrar.fecha_vencimiento|date:"d/m/Y" }}</p>
+                <p><strong>Monto Original:</strong> $ {{ cuenta_cobrar.monto_original|floatformat:2 }}</p>
+                <p><strong>Saldo Pendiente:</strong> $ {{ cuenta_cobrar.monto_pendiente|floatformat:2 }}</p>
+                <p><strong>Estado:</strong> 
+                    <span class="badge 
+                        {% if cuenta_cobrar.estado == 'Pendiente' %}badge-warning
+                        {% elif cuenta_cobrar.estado == 'Pagada' %}badge-success
+                        {% else %}badge-danger{% endif %}">
+                        {{ cuenta_cobrar.estado }}
+                    </span>
+                </p>
+            </div>
+        </div>
+        
+        {% if cuenta_cobrar.descripcion %}
+        <hr>
+        <p><strong>Descripción:</strong></p>
+        <p>{{ cuenta_cobrar.descripcion }}</p>
+        {% endif %}
+    </div>
+    <div class="card-footer">
+        <a href="{% url 'cuentacobrar_editar' pk=cuenta_cobrar.id %}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Editar Cuenta
+        </a>
+        <a href="{% url 'cuentacobrar_lista' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a la Lista
+        </a>
+    </div>
+</div>
+{% endblock %}

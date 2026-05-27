@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if object %}Editar{% else %}Crear{% endif %} Cuenta por Pagar - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">
+        <i class="fas fa-file-invoice-dollar"></i> 
+        {% if object %}Editar Cuenta por Pagar #{{ object.id }}{% else %}Crear Nueva Cuenta por Pagar{% endif %}
+    </h2>
+    
+    <!-- Mostrar errores -->
+    {% if form.errors %}
+    <div class="alert alert-danger mb-3">
+        <h5>Errores en el formulario:</h5>
+        <ul>
+            {% for field_name, errors in form.errors.items %}
+                <li><strong>{{ field_name|title }}:</strong> {{ errors|join:", " }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <form method="post" id="cuentaForm">
+        {% csrf_token %}
+        
+        <!-- ============================================= -->
+        <!-- 🔥 CAMPOS OCULTOS CORREGIDOS (CON PUNTO DECIMAL) -->
+        <!-- ============================================= -->
+        {% if object %}
+            <!-- Para edición: convertir coma a punto -->
+            <input type="hidden" id="id_monto_original" name="monto_original" 
+                   value="{{ object.monto_original|floatformat:2|default:'0.00' }}">
+            <input type="hidden" id="id_monto_pendiente" name="monto_pendiente" 
+                   value="{{ object.monto_pendiente|floatformat:2|default:'0.00' }}">
+            <input type="hidden" id="id_fecha_creacion" name="fecha_creacion" 
+                   value="{{ object.fecha_creacion|date:'Y-m-d H:i:s'|default:'' }}">
+        {% else %}
+            <!-- Para creación: valores con punto decimal -->
+            <input type="hidden" id="id_monto_original" name="monto_original" value="0.00">
+            <input type="hidden" id="id_monto_pendiente" name="monto_pendiente" value="0.00">
+        {% endif %}
+        
+        <!-- Mostrar campos visibles -->
+        <div class="card shadow">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <!-- Proveedor -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Proveedor *</label>
+                            {{ form.proveedor }}
+                            {% if form.proveedor.errors %}
+                                <div class="text-danger small">{{ form.proveedor.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Compra -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Compra relacionada</label>
+                            {{ form.compra }}
+                            {% if form.compra.errors %}
+                                <div class="text-danger small">{{ form.compra.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Monto Informativo (SOLO LECTURA) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Monto Original</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="text" class="form-control bg-light" 
+                                       value="{{ object.monto_original|floatformat:2|default:'0.00' }}" 
+                                       readonly disabled>
+                            </div>
+                            <small class="text-muted">El monto no se puede modificar</small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <!-- Fecha Vencimiento -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Fecha Vencimiento *</label>
+                            {{ form.fecha_vencimiento }}
+                            {% if form.fecha_vencimiento.errors %}
+                                <div class="text-danger small">{{ form.fecha_vencimiento.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Estado -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Estado *</label>
+                            {{ form.estado }}
+                            {% if form.estado.errors %}
+                                <div class="text-danger small">{{ form.estado.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Método de Pago -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Método de Pago</label>
+                            {{ form.metodo_pago }}
+                            {% if form.metodo_pago.errors %}
+                                <div class="text-danger small">{{ form.metodo_pago.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Observaciones -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Observaciones</label>
+                    {{ form.observaciones }}
+                    {% if form.observaciones.errors %}
+                        <div class="text-danger small">{{ form.observaciones.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Botones -->
+                <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                    <a href="{% if object %}{% url 'cuentapagar_detalle' pk=object.id %}{% else %}{% url 'cuentapagar_lista' %}{% endif %}" 
+                       class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary" onclick="fixDecimalFormat()">
+                        <i class="fas fa-save"></i> 
+                        {% if object %}Guardar Cambios{% else %}Crear Cuenta{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Script para corregir formato decimal (coma → punto) -->
+<script>
+function fixDecimalFormat() {
+    // Corregir formato decimal antes de enviar
+    const montoOriginal = document.getElementById('id_monto_original');
+    const montoPendiente = document.getElementById('id_monto_pendiente');
+    
+    if (montoOriginal) {
+        // Reemplazar coma por punto
+        montoOriginal.value = montoOriginal.value.replace(',', '.');
+    }
+    
+    if (montoPendiente) {
+        // Reemplazar coma por punto
+        montoPendiente.value = montoPendiente.value.replace(',', '.');
+    }
+    
+    console.log("DEBUG - monto_original corregido:", montoOriginal.value);
+    console.log("DEBUG - monto_pendiente corregido:", montoPendiente.value);
+    
+    return true;
+}
+
+// Manejar estado y método de pago
+document.addEventListener('DOMContentLoaded', function() {
+    const estadoField = document.querySelector('[name="estado"]');
+    const metodoPagoField = document.querySelector('[name="metodo_pago"]');
+    
+    function toggleMetodoPago() {
+        if (estadoField && metodoPagoField) {
+            const estado = estadoField.value.toUpperCase();
+            if (estado === 'PAGADA' || estado === 'PAGADO') {
+                metodoPagoField.disabled = false;
+                metodoPagoField.required = true;
+            } else {
+                metodoPagoField.disabled = true;
+                metodoPagoField.required = false;
+                metodoPagoField.value = '';
+            }
+        }
+    }
+    
+    toggleMetodoPago();
+    if (estadoField) {
+        estadoField.addEventListener('change', toggleMetodoPago);
+    }
+});
+</script>
+
+{% endblock %}

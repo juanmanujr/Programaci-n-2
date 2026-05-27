@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if form.instance.pk %}Editar Devolución #{{ form.instance.pk }}{% else %}Nueva Devolución a Proveedor{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="display-4">
+        {% if form.instance.pk %}
+            ✏️ Editar Devolución #{{ form.instance.pk }}
+        {% else %}
+            ➕ Registrar Nueva Devolución
+        {% endif %}
+    </h2>
+    <a href="{% url 'devolucionproveedor_lista' %}" class="btn btn-secondary btn-lg">
+        <i class="fas fa-arrow-left"></i> Volver al Listado
+    </a>
+</div>
+
+<hr>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    {% if form.instance.pk %}Modificar Documento{% else %}Datos Generales de la Devolución{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            Por favor, corrige los siguientes errores:
+                            <ul>
+                                {% for field, errors in form.errors.items %}
+                                    {% if field == '__all__' %}
+                                        <li>{{ errors }}</li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    <fieldset class="mb-4 p-3 border rounded">
+                        <legend class="float-none w-auto px-2">Información Principal</legend>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.proveedor.id_for_label }}" class="form-label">Proveedor</label>
+                                {{ form.proveedor }}
+                                {% if form.proveedor.errors %}<div class="text-danger">{{ form.proveedor.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.fecha_devolucion.id_for_label }}" class="form-label">Fecha</label>
+                                {{ form.fecha_devolucion }}
+                                {% if form.fecha_devolucion.errors %}<div class="text-danger">{{ form.fecha_devolucion.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.estado.id_for_label }}" class="form-label">Estado</label>
+                                {{ form.estado }}
+                                {% if form.estado.errors %}<div class="text-danger">{{ form.estado.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label for="{{ form.motivo.id_for_label }}" class="form-label">Motivo de la Devolución</label>
+                                {{ form.motivo }}
+                                {% if form.motivo.errors %}<div class="text-danger">{{ form.motivo.errors }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <h5 class="mt-4 mb-3">Artículos Devueltos</h5>
+                    <div id="detalle-formset">
+                        {{ formset.management_form }}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio Unitario</th>
+                                        <th>Subtotal</th>
+                                        <th>Eliminar</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for detalle_form in formset %}
+                                    <tr>
+                                        {% for hidden in detalle_form.hidden_fields %}{{ hidden }}{% endfor %}
+                                        <td>{{ detalle_form.producto }}</td>
+                                        <td>{{ detalle_form.cantidad }}</td>
+                                        <td>{{ detalle_form.precio_devuelto }}</td>
+                                        <td><span class="subtotal-item">0.00</span></td>
+                                        <td>
+                                            {% if detalle_form.instance.pk %}
+                                                {{ detalle_form.DELETE }}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-info mb-3">Añadir Producto</button>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4>Total a Devolver: <span id="total-general">0.00</span></h4>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save"></i> Guardar Devolución
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Aquí puedes añadir lógica JS para calcular totales dinámicamente y manejar el formset
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Añadir aquí lógica de JavaScript para calcular totales y manejar formsets dinámicos.");
+    });
+</script>
+
+{% endblock content %}

@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cuentas por Cobrar - {{ block.super }}{% endblock %}
+
+{% block content %}
+<h2 class="mt-4 mb-4"><i class="fas fa-hand-holding-usd"></i> Cuentas por Cobrar</h2>
+
+<div class="alert alert-success">
+    <i class="fas fa-check-circle"></i> 
+    <strong>Módulo Habilitado:</strong> Listado de cuentas por cobrar.
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-filter"></i> Filtros</h5>
+                <form method="get" class="form-inline">
+                    <div class="form-group mr-2 mb-2">
+                        <select name="estado" class="form-control" onchange="this.form.submit()">
+                            <option value="">Todos los estados</option>
+                            <option value="Pendiente" {% if request.GET.estado == 'Pendiente' %}selected{% endif %}>Pendientes</option>
+                            <option value="Pagada" {% if request.GET.estado == 'Pagada' %}selected{% endif %}>Pagadas</option>
+                            <option value="Vencida" {% if request.GET.estado == 'Vencida' %}selected{% endif %}>Vencidas</option>
+                        </select>
+                    </div>
+                    <div class="form-group mr-2 mb-2">
+                        <select name="cliente" class="form-control" onchange="this.form.submit()">
+                            <option value="">Todos los clientes</option>
+                            {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}" {% if request.GET.cliente|stringformat:"s" == cliente.id|stringformat:"s" %}selected{% endif %}>
+                                {{ cliente.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="fas fa-file-invoice"></i> Cuentas por Cobrar Registradas</h5>
+    </div>
+    <div class="card-body">
+        {% if cuentas_cobrar %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Venta</th>
+                        <th>Monto Original</th>
+                        <th>Saldo Pendiente</th>
+                        <th>Fecha Vencimiento</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cuenta in cuentas_cobrar %}
+                    <tr>
+                        <td>{{ cuenta.id }}</td>
+                        <td>
+                            {% if cuenta.cliente %}
+                            <!-- CORRECCIÓN: Usar cliente_editar en lugar de cliente_detalle -->
+                            <a href="{% url 'cliente_editar' pk=cuenta.cliente.id %}">
+                                {{ cuenta.cliente.nombre }}
+                            </a>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if cuenta.venta %}
+                            <a href="{% url 'venta_detalle' pk=cuenta.venta.id %}">
+                                Venta #{{ cuenta.venta.id }}
+                            </a>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td><strong>$ {{ cuenta.monto_original|floatformat:2 }}</strong></td>
+                        <td><strong>$ {{ cuenta.monto_pendiente|floatformat:2 }}</strong></td>
+                        <td>{{ cuenta.fecha_vencimiento|date:"d/m/Y" }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if cuenta.estado == 'Pendiente' %}badge-warning
+                                {% elif cuenta.estado == 'Pagada' %}badge-success
+                                {% else %}badge-danger{% endif %}">
+                                {{ cuenta.estado }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'cuentacobrar_detalle' pk=cuenta.id %}" class="btn btn-sm btn-info" title="Ver Detalle">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Mostrar estadísticas si existen en el contexto -->
+        {% if total_pendiente or pendientes_count %}
+        <div class="mt-3 p-3 bg-light rounded">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>Total Pendiente:</strong> $ {{ total_pendiente|default:"0.00"|floatformat:2 }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Cuentas Pendientes:</strong> {{ pendientes_count|default:"0" }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Total Cuentas:</strong> {{ cuentas_cobrar|length }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-hand-holding-usd fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">No hay cuentas por cobrar registradas</h4>
+            <p class="text-muted">Las cuentas por cobrar se generan automáticamente al realizar ventas a crédito.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

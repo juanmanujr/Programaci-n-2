@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Flujo de Caja - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">
+            <i class="fas fa-money-bill-wave"></i> Flujo de Caja
+        </h2>
+        <div>
+            <a href="{% url 'estado_cuentas' %}" class="btn btn-info">
+                <i class="fas fa-balance-scale"></i> Estado de Cuentas
+            </a>
+            <a href="{% url 'caja_detalle' pk=1 %}" class="btn btn-secondary">
+                <i class="fas fa-cash-register"></i> Ver Caja
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros de Fecha -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Filtro por Fecha</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Fecha Desde</label>
+                    <input type="date" name="fecha_desde" class="form-control" 
+                           value="{{ filtro_fecha_desde|default:'' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Fecha Hasta</label>
+                    <input type="date" name="fecha_hasta" class="form-control" 
+                           value="{{ filtro_fecha_hasta|default:'' }}">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="btn-group w-100">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter"></i> Filtrar
+                        </button>
+                        <a href="{% url 'flujo_caja' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Limpiar
+                        </a>
+                    </div>
+                </div>
+            </form>
+            <div class="mt-2 small text-muted">
+                Período: <strong>{{ fecha_inicio|date:"d/m/Y" }}</strong> al <strong>{{ fecha_fin|date:"d/m/Y" }}</strong>
+                {% if filtro_fecha_desde or filtro_fecha_hasta %}
+                ({{ dias_periodo }} días)
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen General -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Ingresos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                $ {{ ingresos_totales|floatformat:2 }}
+                            </div>
+                            <div class="mt-2">
+                                <span class="text-xs text-muted">
+                                    <i class="fas fa-arrow-up text-success"></i>
+                                    {{ total_transacciones_ingresos }} transacciones
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-donate fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Egresos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                $ {{ egresos_totales|floatformat:2 }}
+                            </div>
+                            <div class="mt-2">
+                                <span class="text-xs text-muted">
+                                    <i class="fas fa-arrow-down text-danger"></i>
+                                    {{ total_transacciones_egresos }} transacciones
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-share-square fa-2x text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Saldo Neto
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                $ {{ saldo_neto|floatformat:2 }}
+                            </div>
+                            <div class="mt-2">
+                                <span class="text-xs {% if saldo_neto >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    <i class="fas fa-{% if saldo_neto >= 0 %}arrow-up text-success{% else %}arrow-down text-danger{% endif %}"></i>
+                                    {% if saldo_neto >= 0 %}Superávit{% else %}Déficit{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-balance-scale fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Transacciones -->
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-history"></i> Movimientos del Período
+                <span class="badge bg-light text-dark ms-2">{{ total_transacciones }}</span>
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th width="15%">Fecha</th>
+                            <th width="10%">Tipo</th>
+                            <th width="35%">Descripción</th>
+                            <th width="15%">Método</th>
+                            <th width="10%" class="text-right">Ingreso</th>
+                            <th width="10%" class="text-right">Egreso</th>
+                            <th width="10%" class="text-right">Saldo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if movimientos %}
+                            {% for mov in movimientos %}
+                            <tr>
+                                <td>{{ mov.fecha|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if mov.tipo == 'INGRESO' %}bg-success
+                                        {% elif mov.tipo == 'EGRESO' %}bg-danger
+                                        {% else %}bg-info{% endif %}">
+                                        {{ mov.get_tipo_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {{ mov.descripcion|default:"-" }}
+                                    {% if mov.referencia %}
+                                    <br><small class="text-muted">Ref: {{ mov.referencia }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ mov.metodo_pago|default:"-" }}</td>
+                                <td class="text-right text-success font-weight-bold">
+                                    {% if mov.tipo == 'INGRESO' %}
+                                    $ {{ mov.monto|floatformat:2 }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td class="text-right text-danger font-weight-bold">
+                                    {% if mov.tipo == 'EGRESO' %}
+                                    $ {{ mov.monto|floatformat:2 }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td class="text-right font-weight-bold {% if mov.saldo_acumulado >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    $ {{ mov.saldo_acumulado|floatformat:2 }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <p class="h5">No hay movimientos en el período seleccionado</p>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                    <tfoot class="table-secondary">
+                        <tr>
+                            <td colspan="4" class="text-right"><strong>TOTALES:</strong></td>
+                            <td class="text-right text-success font-weight-bold">$ {{ ingresos_totales|floatformat:2 }}</td>
+                            <td class="text-right text-danger font-weight-bold">$ {{ egresos_totales|floatformat:2 }}</td>
+                            <td class="text-right font-weight-bold {% if saldo_neto >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                $ {{ saldo_neto|floatformat:2 }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-light">
+            <div class="row">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> 
+                        Mostrando {{ movimientos|length }} de {{ total_transacciones }} movimientos
+                    </small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted">
+                        <i class="fas fa-sync-alt"></i> 
+                        Generado el {% now "d/m/Y H:i" %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts para fechas por defecto -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaDesde = document.querySelector('[name="fecha_desde"]');
+    const fechaHasta = document.querySelector('[name="fecha_hasta"]');
+    
+    // Establecer mes actual por defecto si no hay filtros
+    if (!fechaDesde.value && !fechaHasta.value) {
+        const hoy = new Date();
+        const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        
+        fechaDesde.valueAsDate = primerDiaMes;
+        fechaHasta.valueAsDate = hoy;
+    }
+});
+</script>
+{% endblock %}

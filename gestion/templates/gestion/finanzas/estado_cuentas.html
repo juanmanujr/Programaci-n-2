@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block title %}Estado de Cuentas - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-balance-scale"></i> {{ titulo_pagina }}</h4>
+            </div>
+            <div class="card-body">
+                
+                <!-- Filtros -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-filter"></i> Filtros</h6>
+                    </div>
+                    <div class="card-body">
+                        <form method="get" class="row">
+                            <div class="col-md-3 mb-2">
+                                <input type="text" name="cliente" class="form-control" 
+                                       placeholder="Buscar cliente..." value="{{ filtro_cliente|default:'' }}">
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <input type="text" name="proveedor" class="form-control" 
+                                       placeholder="Buscar proveedor..." value="{{ filtro_proveedor|default:'' }}">
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <select name="estado" class="form-control">
+                                    <option value="">Todos los estados</option>
+                                    <option value="Pendiente" {% if filtro_estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
+                                    <option value="Pagada" {% if filtro_estado == 'Pagada' %}selected{% endif %}>Pagada</option>
+                                    <option value="Vencida" {% if filtro_estado == 'Vencida' %}selected{% endif %}>Vencida</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <select name="vencimiento" class="form-control">
+                                    <option value="">Todos los vencimientos</option>
+                                    <option value="vencidas" {% if filtro_vencimiento == 'vencidas' %}selected{% endif %}>Vencidas</option>
+                                    <option value="por_vencer" {% if filtro_vencimiento == 'por_vencer' %}selected{% endif %}>Por vencer</option>
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i> Filtrar
+                                </button>
+                                <a href="{% url 'estado_cuentas' %}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Limpiar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Resumen General -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <h6><i class="fas fa-hand-holding-usd"></i> Por Cobrar</h6>
+                                <h3>$ {{ total_por_cobrar|floatformat:2 }}</h3>
+                                <small>Clientes: {{ clientes_con_deuda }}</small>
+                                {% if vencidas_por_cobrar > 0 %}
+                                <div class="mt-2">
+                                    <span class="badge badge-warning">Vencidas: $ {{ vencidas_por_cobrar|floatformat:2 }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body">
+                                <h6><i class="fas fa-file-invoice-dollar"></i> Por Pagar</h6>
+                                <h3>$ {{ total_por_pagar|floatformat:2 }}</h3>
+                                <small>Proveedores: {{ proveedores_con_deuda }}</small>
+                                {% if vencidas_por_pagar > 0 %}
+                                <div class="mt-2">
+                                    <span class="badge badge-warning">Vencidas: $ {{ vencidas_por_pagar|floatformat:2 }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card {% if saldo_neto >= 0 %}bg-success{% else %}bg-warning{% endif %} text-white">
+                            <div class="card-body">
+                                <h6><i class="fas fa-balance-scale"></i> Saldo Neto</h6>
+                                <h3>$ {{ saldo_neto|floatformat:2 }}</h3>
+                                <small>
+                                    {% if saldo_neto > 0 %}
+                                    <i class="fas fa-arrow-up"></i> A favor
+                                    {% elif saldo_neto < 0 %}
+                                    <i class="fas fa-arrow-down"></i> En contra
+                                    {% else %}
+                                    <i class="fas fa-equals"></i> Equilibrado
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tablas de Detalle -->
+                <div class="row">
+                    <!-- Cuentas por Cobrar -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="fas fa-hand-holding-usd"></i> Cuentas por Cobrar</h6>
+                            </div>
+                            <div class="card-body">
+                                {% if cuentas_cobrar %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Cliente</th>
+                                                <th>Vence</th>
+                                                <th>Monto</th>
+                                                <th>Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for cuenta in cuentas_cobrar|slice:":10" %}
+                                            <tr>
+                                                <td>{{ cuenta.cliente }}</td>
+                                                <td>{{ cuenta.fecha_vencimiento|date:"d/m/Y" }}</td>
+                                                <td>$ {{ cuenta.monto_pendiente|floatformat:2 }}</td>
+                                                <td>
+                                                    <span class="badge 
+                                                        {% if cuenta.estado == 'Pagada' %}badge-success
+                                                        {% elif cuenta.estado == 'Vencida' %}badge-danger
+                                                        {% else %}badge-warning{% endif %}">
+                                                        {{ cuenta.estado }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <a href="{% url 'cuentacobrar_lista' %}" class="btn btn-sm btn-info mt-2">
+                                    <i class="fas fa-list"></i> Ver todas ({{ cuentas_cobrar.count }})
+                                </a>
+                                {% else %}
+                                <p class="text-muted text-center mb-0">No hay cuentas por cobrar</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Cuentas por Pagar -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-danger text-white">
+                                <h6 class="mb-0"><i class="fas fa-file-invoice-dollar"></i> Cuentas por Pagar</h6>
+                            </div>
+                            <div class="card-body">
+                                {% if cuentas_pagar %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Proveedor</th>
+                                                <th>Vence</th>
+                                                <th>Monto</th>
+                                                <th>Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for cuenta in cuentas_pagar|slice:":10" %}
+                                            <tr>
+                                                <td>{{ cuenta.proveedor }}</td>
+                                                <td>{{ cuenta.fecha_vencimiento|date:"d/m/Y" }}</td>
+                                                <td>$ {{ cuenta.monto_pendiente|floatformat:2 }}</td>
+                                                <td>
+                                                    <span class="badge 
+                                                        {% if cuenta.estado == 'Pagada' %}badge-success
+                                                        {% elif cuenta.estado == 'Vencida' %}badge-danger
+                                                        {% else %}badge-warning{% endif %}">
+                                                        {{ cuenta.estado }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <a href="{% url 'cuentapagar_lista' %}" class="btn btn-sm btn-danger mt-2">
+                                    <i class="fas fa-list"></i> Ver todas ({{ cuentas_pagar.count }})
+                                </a>
+                                {% else %}
+                                <p class="text-muted text-center mb-0">No hay cuentas por pagar</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

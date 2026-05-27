@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Abrir Nueva Caja - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="fas fa-lock-open"></i> {{ titulo_pagina }}</h4>
+            </div>
+            <div class="card-body">
+                
+                <!-- Mensaje si ya existe caja abierta -->
+                {% if ya_existe_caja_abierta %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Atención:</strong> Ya existe una caja abierta.
+                    <br>
+                    <strong>Caja:</strong> {{ caja_abierta_actual.nombre }}
+                    <br>
+                    <strong>Responsable:</strong> {{ caja_abierta_actual.empleado_responsable }}
+                    <br>
+                    <strong>Abierta el:</strong> {{ caja_abierta_actual.fecha_apertura|date:"d/m/Y H:i" }}
+                </div>
+                
+                <div class="text-center">
+                    <a href="{% url 'caja_lista' %}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left"></i> Volver a la lista de cajas
+                    </a>
+                </div>
+                
+                {% else %}
+                <!-- Formulario para abrir nueva caja -->
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Mostrar errores generales -->
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                        <i class="fas fa-exclamation-circle"></i> {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="form-group">
+                        <label for="id_nombre">{{ form.nombre.label }}</label>
+                        {{ form.nombre }}
+                        {% if form.nombre.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.nombre.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_empleado_responsable">{{ form.empleado_responsable.label }}</label>
+                        {{ form.empleado_responsable }}
+                        {% if form.empleado_responsable.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.empleado_responsable.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_monto_inicial">{{ form.monto_inicial.label }}</label>
+                        {{ form.monto_inicial }}
+                        {% if form.monto_inicial.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.monto_inicial.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            Efectivo físico disponible al inicio
+                        </small>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="verificar_fondos" required>
+                        <label class="form-check-label" for="verificar_fondos">
+                            Confirmo que he verificado físicamente el monto inicial
+                        </label>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end">
+                        <a href="{% url 'caja_lista' %}" class="btn btn-secondary mr-2">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-lock-open"></i> Abrir Caja
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+                
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

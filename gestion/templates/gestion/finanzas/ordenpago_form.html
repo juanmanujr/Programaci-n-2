@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{# ELIMINAMOS: {% load crispy_forms_tags %} #}
+{% load humanize %}
+
+{% block title %}
+    {% if object %}Editar Orden de Pago OP-{{ object.id }}{% else %}Crear Nueva Orden de Pago{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<h2 class="display-4">💰 
+    {% if object %}Editar Orden de Pago OP-{{ object.id }}{% else %}Nueva Orden de Pago{% endif %}
+</h2>
+<p class="text-muted">Gestione los pagos a proveedores aplicando montos a las Cuentas por Pagar pendientes.</p>
+
+<hr>
+
+<form method="post" id="ordenPagoForm">
+    {% csrf_token %}
+
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-file-invoice"></i> Datos Generales de la Orden</h5>
+                </div>
+                <div class="card-body">
+                    {# Sustituimos {{ form|crispy }} por {{ form.as_p }} #}
+                    {{ form.as_p }}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-calculator"></i> Resumen y Control</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">El total aplicado representa el monto total que saldrá de caja/banco para cubrir las deudas seleccionadas.</p>
+                    
+                    {# Campo de Total Aplicado (Solo Lectura) #}
+                    <div class="form-group">
+                        <label for="id_total_aplicado">Total Aplicado</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text currency-symbol">{{ object.moneda.simbolo|default:'$' }}</span> 
+                            </div>
+                            <input type="text" id="id_total_aplicado" class="form-control form-control-lg bg-light font-weight-bold text-right" value="0" readonly>
+                        </div>
+                    </div>
+                    
+                    {% if object and object.estado != 'PENDIENTE' %}
+                    <div class="alert alert-danger mt-3">
+                        ⚠️ **Advertencia:** Esta orden ya está **{{ object.estado }}**. La edición puede afectar la contabilidad.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="fas fa-list-alt"></i> Detalle de Cuentas por Pagar (CxP)</h5>
+        </div>
+        <div class="card-body">
+            
+            {{ formset.management_form }}
+            
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="detalle-formset">
+                    <thead>
+                        <tr class="table-active">
+                            <th>Cuenta por Pagar</th>
+                            <th>Monto Pendiente (Referencia)</th>
+                            <th>Monto a Aplicar</th>
+                            <th class="text-center">Eliminar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for form in formset %}
+                        <tr class="formset-row {% if forloop.last and not object %}empty-form{% endif %}">
+                            
+                            {# 1. ID de la Cuenta por Pagar #}
+                            <td>
+                                {{ form.cuenta_a_pagar.errors }}
+                                {{ form.cuenta_a_pagar }}
+                            </td>
+                            
+                            {# 2. Campo de REFERENCIA #}
+                            <td class="monto-pendiente-cell">
+                                <input type="text" class="form-control text-right monto-pendiente-referencia" value="" readonly>
+                            </td>
+
+                            {# 3. Monto a Aplicar #}
+                            <td>
+                                {{ form.monto_aplicado.errors }}
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text currency-symbol">{{ object.moneda.simbolo|default:'$' }}</span>
+                                    </div>
+                                    {{ form.monto_aplicado }}
+                                </div>
+                            </td>
+
+                            {# 4. Campo de control de borrado #}
+                            <td class="text-center align-middle">
+                                {{ form.id }}
+                                {{ form.DELETE }}
+                                <label for="{{ form.DELETE.id_for_label }}" class="d-block text-danger mt-1 small">Borrar</label>
+                                {{ form.non_field_errors }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <button type="button" class="btn btn-primary mt-3" id="add-item"><i class="fas fa-plus"></i> Agregar Línea de Pago</button>
+
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between my-4">
+        {# ¡CORRECCIÓN FINAL! Usamos el nombre 'ordenpago_lista' que está en urls.py #}
+        <a href="{% url 'ordenpago_lista' %}" class="btn btn-secondary btn-lg">Cancelar</a>
+        <button type="submit" class="btn btn-success btn-lg">
+            <i class="fas fa-save"></i> 
+            {% if object %}Guardar Cambios{% else %}Crear Orden de Pago{% endif %}
+        </button>
+    </div>
+
+</form>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Aplicar la clase form-control a todos los select/input del formulario principal y del formset
+    $('#ordenPagoForm select, #ordenPagoForm input[type="number"], #ordenPagoForm input[type="text"], #ordenPagoForm textarea').not('#id_total_aplicado, input[type="checkbox"], .monto-pendiente-referencia').addClass('form-control');
+    
+    // Almacenamiento local del template de la fila vacía de Django
+    let empty_row_template = $('#detalle-formset tbody tr.empty-form').clone(true); 
+    $('#detalle-formset tbody tr.empty-form').remove(); 
+    
+    // -----------------------------------------------------------------
+    // 1. FORMSET DINÁMICO (Añadir/Eliminar filas)
+    // -----------------------------------------------------------------
+    
+    function reindex_forms() {
+        let forms = $('#detalle-formset tbody tr.formset-row:visible');
+        
+        forms.each(function(i) {
+            $(this).find(':input').each(function() {
+                let name = $(this).attr('name');
+                if (name) {
+                    name = name.replace(/-\d+-/g, '-' + i + '-');
+                    $(this).attr('name', name);
+                }
+                let id = $(this).attr('id');
+                if (id) {
+                    id = id.replace(/-\d+-/g, '-' + i + '-');
+                    $(this).attr('id', id);
+                }
+            });
+            $(this).find('input[name$="DELETE"]').prop('checked', false);
+        });
+        
+        $('#id_ordenpago_detalle_set-TOTAL_FORMS').val(forms.length);
+    }
+
+    $('#add-item').click(function() {
+        let current_forms = parseInt($('#id_ordenpago_detalle_set-TOTAL_FORMS').val());
+        
+        let new_row = empty_row_template.clone(true);
+        new_row.removeClass('empty-form').show(); 
+        
+        new_row.find(':input').each(function() {
+            let name = $(this).attr('name');
+            let id = $(this).attr('id');
+            if (name) { name = name.replace(/-\d+-/g, '-' + current_forms + '-'); $(this).attr('name', name); }
+            if (id) { id = id.replace(/-\d+-/g, '-' + current_forms + '-'); $(this).attr('id', id); }
+            if ($(this).attr('type') !== 'checkbox') {
+                $(this).val('');
+            } else {
+                $(this).prop('checked', false);
+            }
+        });
+        
+        $('#detalle-formset tbody').append(new_row);
+        $('#id_ordenpago_detalle_set-TOTAL_FORMS').val(current_forms + 1);
+        
+        new_row.find('select, input[type="number"], input[type="text"]').not('.monto-pendiente-referencia').addClass('form-control');
+        
+        new_row.find('.monto-aplicado-input').on('change keyup', updateTotal);
+        new_row.find('.cuenta-a-pagar-select').on('change', updateMontoPendiente);
+        
+        updateTotal(); 
+    });
+
+    $('#detalle-formset').on('change', 'input[name$="DELETE"]', function() {
+        let row = $(this).closest('.formset-row');
+        if ($(this).is(':checked')) {
+            row.hide();
+        } else {
+            row.show();
+        }
+        updateTotal();
+    });
+    
+    // -----------------------------------------------------------------
+    // 2. LÓGICA DE CÁLCULO Y REFERENCIA 
+    // -----------------------------------------------------------------
+    
+    let cuentasPendientes = {}; 
+    
+    function obtenerMontosPendientes() {
+        // SIMULACIÓN DE DATA (REMPLAZAR CON LLAMADA AJAX REAL)
+        cuentasPendientes = {
+            '1': 500000.00, 
+            '2': 750000.00, 
+            '3': 1200000.00,
+            '4': 250000.00,
+        };
+        
+        $('.cuenta-a-pagar-select').each(function() {
+             updateMontoPendiente.call(this);
+        });
+    }
+
+    function updateMontoPendiente() {
+        let row = $(this).closest('.formset-row');
+        let selectedId = $(this).val();
+        
+        let monto = cuentasPendientes[selectedId] || 0;
+        
+        let formattedMonto = monto.toLocaleString('es-ES', { 
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
+
+        row.find('.monto-pendiente-referencia').val(formattedMonto);
+    }
+    
+    function updateTotal() {
+        let total = 0;
+        $('.formset-row').each(function() {
+            let row = $(this);
+            let montoAplicadoInput = row.find('.monto-aplicado-input');
+            let deleteCheckbox = row.find('input[name$="DELETE"]');
+
+            if (deleteCheckbox.length && deleteCheckbox.is(':checked')) {
+                return true; 
+            }
+            
+            let montoStr = montoAplicadoInput.val() || '0';
+            
+            let monto = parseFloat(montoStr.replace(/\./g, '').replace(/,/g, '.')) || 0;
+            
+            total += monto;
+        });
+
+        let formattedTotal = total.toLocaleString('es-ES', { 
+            minimumFractionDigits: 0, 
+            maximumFractionDigits: 0 
+        });
+        
+        $('#id_total_aplicado').val(formattedTotal);
+    }
+
+    // -----------------------------------------------------------------
+    // 3. INICIALIZACIÓN
+    // -----------------------------------------------------------------
+
+    $('.monto-aplicado-input').on('change keyup', updateTotal);
+    $('.cuenta-a-pagar-select').on('change', updateMontoPendiente);
+    
+    obtenerMontosPendientes();
+    updateTotal();
+    
+    $('#ordenPagoForm').on('submit', function() {
+        reindex_forms(); 
+    });
+});
+</script>
+
+{% endblock %}

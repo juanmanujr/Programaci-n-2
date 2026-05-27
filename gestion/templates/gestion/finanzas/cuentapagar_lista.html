@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cuentas por Pagar - {{ block.super }}{% endblock %}
+
+{% block content %}
+<h2 class="mt-4 mb-4">Cuentas por Pagar</h2>
+
+<div class="card shadow">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="fas fa-file-invoice-dollar"></i> Cuentas por Pagar Registradas</h5>
+    </div>
+    <div class="card-body">
+        {% if cuentas_pagar %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Proveedor</th>
+                        <th>Compra</th>
+                        <th>Monto Original</th>
+                        <th>Saldo Pendiente</th>
+                        <th>Fecha Vencimiento</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cuenta in cuentas_pagar %}
+                    <tr>
+                        <td>{{ cuenta.id }}</td>
+                        <td>{{ cuenta.proveedor.nombre }}</td>
+                        <td>
+                            {% if cuenta.compra %}
+                                Compra #{{ cuenta.compra.id }}
+                            {% else %}
+                                <span class="text-muted">Sin compra</span>
+                            {% endif %}
+                        </td>
+                        <td>$ {{ cuenta.monto_original|floatformat:2 }}</td>
+                        <td>$ {{ cuenta.monto_pendiente|floatformat:2 }}</td>
+                        <td>{{ cuenta.fecha_vencimiento|date:"d/m/Y" }}</td>
+                        <td>
+                            <span class="badge {% if cuenta.estado == 'PENDIENTE' %}bg-warning{% elif cuenta.estado == 'PAGADA' %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ cuenta.get_estado_display }}
+                            </span>
+                            {% if cuenta.esta_vencida and cuenta.estado != 'PAGADA' %}
+                            <span class="badge bg-danger">VENCIDA</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-nowrap">
+                            <a href="{% url 'cuentapagar_detalle' pk=cuenta.pk %}" class="btn btn-sm btn-info" title="Ver Detalle">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'cuentapagar_update' pk=cuenta.pk %}" class="btn btn-sm btn-warning" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-warning" role="alert">
+            No hay cuentas por pagar registradas.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

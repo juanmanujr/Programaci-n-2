@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Detalle de Orden de Compra #{{ object.id }} - {{ block.super }}
+{% endblock %}
+
+{% block content %}
+<div class="mt-4">
+    <h2>Detalle de Orden de Compra #{{ object.id }}</h2>
+    <div class="card shadow mb-4">
+        <div class="card-header bg-info text-white">
+            Información General
+        </div>
+        <div class="card-body">
+            <p><strong>Proveedor:</strong> {{ object.proveedor.razon_social }}</p>
+            <p><strong>Fecha Emisión:</strong> {{ object.fecha_emision }}</p>
+            <p><strong>Total:</strong> ${{ object.total|floatformat:2 }}</p>
+            <p><strong>Estado:</strong> {{ object.get_estado_display }}</p>
+            <p><strong>Observaciones:</strong> {{ object.observaciones|default:"Ninguna" }}</p>
+            
+            {% if object.estado == 'PENDIENTE' %}
+            <a href="{% url 'ordencompra_update' pk=object.pk %}" class="btn btn-warning"><i class="fas fa-edit"></i> Editar</a>
+            <a href="{% url 'ordencompra_procesar' pk=object.pk %}" class="btn btn-success" 
+               onclick="return confirm('¿Confirmar procesamiento de la Orden?');">
+                <i class="fas fa-check"></i> Procesar
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header bg-secondary text-white">
+            Productos Solicitados
+        </div>
+        <ul class="list-group list-group-flush">
+            {% for detalle in object.detalles.all %}
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>{{ detalle.producto.nombre }}</span>
+                    <span>{{ detalle.cantidad }} x ${{ detalle.precio_unitario|floatformat:2 }} = ${{ detalle.subtotal|floatformat:2 }}</span>
+                </li>
+            {% empty %}
+                <li class="list-group-item text-center">No hay detalles registrados.</li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <a href="{% url 'ordencompra_lista' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver al Listado</a>
+</div>
+{% endblock %}
