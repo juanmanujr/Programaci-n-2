@@ -1,0 +1,55 @@
+================================================================
+           INSTRUCCIONES EN 1 MINUTO - ENTREGA FINAL
+================================================================
+
+ALUMNO: Juan Manuel Gómez Achucarro
+MATERIA: Programación 2
+
+
+================================================================
+ CÓMO EJECUTAR (30 segundos):
+
+1. HAGA DOBLE CLIC en "EJECUTAR_SISTEMA.bat"
+
+2. ESPERE que aparezca una ventana negra
+
+3. ABRA SU NAVEGADOR en: http://127.0.0.1:8000/
+
+================================================================
+ ACCESOS DIRECTOS:
+
+• SISTEMA PRINCIPAL: http://127.0.0.1:8000/
+
+• PANEL ADMIN: http://127.0.0.1:8000/admin/
+  Usuario: admin
+  Contraseña: 123
+
+• DIAGRAMA DE TABLAS: Carpeta "Base de datos"
+
+================================================================
+ 
+
+EN EL PANEL ADMIN (http://127.0.0.1:8000/admin/):
+✓ Ver las 43 tablas implementadas
+✓ Crear/Eliminar/Editar cualquier registro
+
+EN EL SISTEMA:
+✓ Dashboard con métricas
+✓ Formularios funcionales
+✓ Navegación completa
+
+================================================================
+ SI HAY PROBLEMAS:
+
+ERROR: "No se ejecuta .bat"
+  • Abrir PowerShell en esta carpeta
+  • Ejecutar: cd sistema_ventas1.1
+  • Ejecutar: .\.venv\Scripts\Activate
+  • Ejecutar: python manage.py runserver
+
+ERROR: "Puerto 8000 ocupado"
+  • En la ventana negra, presionar Ctrl+C
+  • Ejecutar: python manage.py runserver 8001
+  • Abrir: http://127.0.0.1:8001/
+
+================================================================
